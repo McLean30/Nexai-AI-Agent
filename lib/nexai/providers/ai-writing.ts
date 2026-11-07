@@ -1,10 +1,13 @@
-import type { DecisionMaker, EmailMessage, Prospect } from "../types";
+import type { DecisionMaker, EmailMessage, Prospect, ResearchReport } from "../types";
 import type { AiWritingProvider, ProviderStatus } from "./types";
 import { hasAllEnv, missingEnv, PROVIDER_ENV } from "./env";
 
 // AI writing provider (personalised outreach drafts).
-// MOCK composes a deterministic, clearly-simulated draft from known prospect
-// facts. LIVE would call OpenAI (or another LLM) via OPENAI_API_KEY.
+//
+// MOCK composes a deterministic, clearly-simulated draft from the prospect's
+// structured research and Nexai's offer. It personalises only from sourced
+// facts, phrases inferred operational problems as questions, and leaves
+// unknowns unknown. LIVE would call OpenAI via OPENAI_API_KEY.
 
 const REQUIRED = PROVIDER_ENV.aiWriting;
 
@@ -20,6 +23,14 @@ function status(): ProviderStatus {
     requiredEnv: [...REQUIRED],
     missingEnv: missingEnv(REQUIRED),
     docsUrl: "https://platform.openai.com/api-keys",
+    plan: {
+      liveService: "OpenAI",
+      apiName: "OpenAI Responses API (gpt-class model)",
+      reusesFirecrawl: false,
+      implemented: false,
+      envPlaceholder: false,
+      note: "OPENAI_API_KEY is concrete; the live generation call is not wired yet.",
+    },
   };
 }
 
@@ -28,6 +39,13 @@ function firstName(name?: string): string {
   return name.split(" ")[0];
 }
 
+function factValue(report: ResearchReport | undefined, label: string): string | undefined {
+  return report?.facts?.find((f) => f.label.toLowerCase() === label.toLowerCase())?.value;
+}
+
+const NEXAI_OFFER =
+  "We build custom software for trade & field-service businesses — things like job scheduling and dispatch, quote-to-invoice automation, and field-engineer mobile apps.";
+
 function mockDraft(input: {
   prospect: Prospect;
   decisionMaker?: DecisionMaker;
@@ -35,30 +53,48 @@ function mockDraft(input: {
 }): { subject: string; body: string } {
   const { prospect, decisionMaker } = input;
   const step = input.stepType ?? "initial";
-  const signal =
-    prospect.research?.signals?.[0] ??
-    `your work at ${prospect.companyName}`;
-  const industry = (prospect.industry ?? "your sector").toLowerCase();
   const name = firstName(decisionMaker?.name);
+  const report = prospect.research;
+
+  // Personalise ONLY from sourced facts. Anything not known stays out.
+  const sector = factValue(report, "Sector") ?? prospect.industry;
+  const location = factValue(report, "Location") ?? prospect.location;
+
+  // Build an opener from whatever facts we actually have; omit unknowns.
+  const facts: string[] = [];
+  if (sector) facts.push(sector.toLowerCase());
+  if (location) facts.push(`based in ${location}`);
+  const opener = facts.length
+    ? `I came across ${prospect.companyName} — ${facts.join(", ")}.`
+    : `I came across ${prospect.companyName}.`;
+
+  // Phrase an inferred operational problem as a question (never as a claim).
+  const question =
+    report?.operationalQuestions?.[0] ??
+    (report?.customAppIdeas?.[0]
+      ? `How are you currently handling ${report.customAppIdeas[0].title.toLowerCase()}?`
+      : "How are you currently handling job scheduling and getting completed work invoiced?");
+
+  const footer =
+    "\n\n— Simulated draft. Personalised only from known facts; the operational point above is a question, not an assumption. Connect OpenAI to generate live copy.";
 
   if (step === "follow_up_1") {
     return {
-      subject: `Re: Demand gen for ${prospect.companyName}`,
+      subject: `Re: A quick idea for ${prospect.companyName}`,
       body:
-        `Hi ${name},\n\n[SIMULATED DRAFT] Looping back on my note. Given ${signal.toLowerCase()}, ` +
-        `I put together a short outline of how we'd approach outbound for a ${industry} company at ` +
-        `your stage. Worth 15 minutes next week?\n\nBest,\nNexai Digital`,
+        `Hi ${name},\n\nJust following up. ${NEXAI_OFFER}\n\n` +
+        `${question}\n\nIf it's useful I can share a couple of examples from similar ${sector ? sector.toLowerCase() + " " : ""}firms. ` +
+        `Worth a short call?\n\nBest,\nNexai Digital${footer}`,
     };
   }
 
   return {
-    subject: `Pipeline for ${prospect.companyName}`,
+    subject: sector ? `Custom apps for ${sector.toLowerCase()} teams` : `A quick idea for ${prospect.companyName}`,
     body:
-      `Hi ${name},\n\n[SIMULATED DRAFT — generated without live AI credentials]\n\n` +
-      `I noticed ${signal.toLowerCase()}. We help ${industry} companies add a predictable outbound ` +
-      `channel without hiring an in-house SDR team.\n\n` +
-      `If growing qualified pipeline is on the roadmap this quarter, would you be open to a short call?\n\n` +
-      `Best,\nNexai Digital\n\n— This is a mock draft. Connect OpenAI to generate real copy.`,
+      `Hi ${name},\n\n${opener} ${NEXAI_OFFER}\n\n` +
+      `A question rather than an assumption: ${question}\n\n` +
+      `If reducing admin or double-handling is on your mind this year, would you be open to a 15-minute call to see if a small custom tool would pay for itself?\n\n` +
+      `Best,\nNexai Digital${footer}`,
   };
 }
 

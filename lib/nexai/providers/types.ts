@@ -12,6 +12,18 @@ import type {
 // implementation can be swapped for a live one once server-side credentials are
 // supplied, without touching the UI or API routes.
 
+/** How a provider will connect to a real service in the final integration. */
+export interface ProviderPlan {
+  liveService: string; // e.g. "Firecrawl + OpenAI"
+  apiName: string; // the specific API(s) that will be called
+  reusesFirecrawl: boolean;
+  implemented: boolean; // true if a live code path exists today
+  // True when `requiredEnv` is a generic placeholder with no real
+  // implementation behind it yet.
+  envPlaceholder: boolean;
+  note?: string;
+}
+
 export interface ProviderStatus {
   kind: ProviderKind;
   id: string;
@@ -22,6 +34,15 @@ export interface ProviderStatus {
   requiredEnv: string[];
   missingEnv: string[];
   docsUrl?: string;
+  plan?: ProviderPlan;
+}
+
+/** Result of a contact-enrichment run. */
+export interface ContactEnrichmentResult {
+  contacts: DecisionMaker[];
+  outcome: "found" | "no_contacts" | "needs_review";
+  note: string;
+  simulated: boolean;
 }
 
 export interface DiscoveryProvider {
@@ -39,7 +60,7 @@ export interface ResearchProvider {
 export interface EnrichmentProvider {
   status(): ProviderStatus;
   /** Find/verify decision-maker contact details for a prospect. */
-  enrich(prospect: Prospect): Promise<DecisionMaker[]>;
+  enrich(prospect: Prospect): Promise<ContactEnrichmentResult>;
 }
 
 export interface AiWritingProvider {

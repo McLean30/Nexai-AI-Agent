@@ -24,6 +24,14 @@ function status(): ProviderStatus {
     requiredEnv: [...REQUIRED],
     missingEnv: missingEnv(REQUIRED),
     docsUrl: "https://learn.microsoft.com/en-us/graph/api/user-sendmail",
+    plan: {
+      liveService: "Microsoft 365 (Microsoft Graph)",
+      apiName: "Microsoft Graph sendMail (OAuth client credentials)",
+      reusesFirecrawl: false,
+      implemented: false,
+      envPlaceholder: false,
+      note: "MS365_* are concrete; Graph sendMail is gated behind the explicit sending-enabled setting.",
+    },
   };
 }
 

@@ -61,6 +61,12 @@ export interface Source {
   url: string;
 }
 
+/** Whether a contact's name/role is tied to the prospect's company. */
+export type CompanyMatch = "match" | "mismatch" | "uncertain";
+
+/** Review routing for an enriched contact. */
+export type ContactReviewStatus = "ok" | "needs_review";
+
 export interface DecisionMaker {
   id: string;
   name: string;
@@ -70,6 +76,17 @@ export interface DecisionMaker {
   linkedinUrl?: string;
   seniority?: string;
   sources: Source[];
+
+  // --- Enrichment metadata (new) ---
+  // How confidently the contact is tied to this company/domain.
+  companyMatch?: CompanyMatch;
+  // When the contact/verification was last checked.
+  checkedAt?: ISODate;
+  // True when produced by the mock enrichment provider (not a real lookup).
+  simulated?: boolean;
+  // Uncertain/invalid/accept-all/conflicting results are routed to review.
+  reviewStatus?: ContactReviewStatus;
+  reviewReason?: string;
 }
 
 /** A verifiable company fact (as reported by the research source). */
@@ -153,6 +170,14 @@ export interface EmailMessage {
   scheduledFor?: ISODate;
   sentAt?: ISODate;
   createdAt: ISODate;
+
+  // --- Draft lifecycle (new) ---
+  // True once a human has edited the subject/body (protects against silent
+  // overwrite on regeneration).
+  edited?: boolean;
+  // True once the draft has been approved for sending.
+  approved?: boolean;
+  updatedAt?: ISODate;
 }
 
 export interface Prospect {

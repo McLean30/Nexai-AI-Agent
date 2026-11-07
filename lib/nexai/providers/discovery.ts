@@ -26,6 +26,14 @@ function status(): ProviderStatus {
     requiredEnv: [...REQUIRED],
     missingEnv: missingEnv(REQUIRED),
     docsUrl: undefined,
+    plan: {
+      liveService: "Firecrawl Search + Companies House",
+      apiName: "Firecrawl /search for web discovery; Companies House API for registry data",
+      reusesFirecrawl: true,
+      implemented: false,
+      envPlaceholder: true,
+      note: "DISCOVERY_API_KEY is a placeholder — the live search is not wired yet. Firecrawl can be reused for discovery.",
+    },
   };
 }
 

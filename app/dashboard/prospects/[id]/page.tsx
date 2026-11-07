@@ -49,6 +49,7 @@ export default function ProspectDetailPage() {
   const [editing, setEditing] = useState(false);
   const [edit, setEdit] = useState<Partial<Prospect>>({});
   const [notice, setNotice] = useState<string | null>(null);
+  const [draftEdit, setDraftEdit] = useState<{ subject: string; body: string } | null>(null);
 
   if (loading) return <div className="nx-content"><Spinner label="Loading prospect…" /></div>;
   if (error || !data?.prospect)
@@ -62,6 +63,7 @@ export default function ProspectDetailPage() {
     );
 
   const p = data.prospect;
+  const reviewCount = p.decisionMakers.filter((d) => d.reviewStatus === "needs_review").length;
 
   const patch = async (body: Partial<Prospect>) => {
     await apiSend(`/api/nexai/prospects/${id}`, "PATCH", body);
@@ -91,15 +93,86 @@ export default function ProspectDetailPage() {
     }
   };
 
-  const generateDraft = async () => {
+  const enrichContacts = async () => {
+    setBusy("enrich");
+    setNotice(null);
+    try {
+      const res = await apiSend<{ added: number; needsReview: number; result: { outcome: string }; provider: { mode: string } }>(
+        `/api/nexai/prospects/${id}/enrich`,
+        "POST",
+      );
+      const sim = res.provider.mode === "mock" ? " (simulated)" : "";
+      setNotice(
+        res.result.outcome === "no_contacts"
+          ? `Enrichment found no contacts${sim}.`
+          : `Enrichment added ${res.added} contact${res.added === 1 ? "" : "s"}${res.needsReview ? ` · ${res.needsReview} need review` : ""}${sim}.`,
+      );
+      reload();
+    } catch (e) {
+      setNotice(`Enrichment failed: ${(e as Error).message}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const generateDraft = async (force = false) => {
     setBusy("draft");
     setNotice(null);
     try {
-      const res = await apiSend<{ draft: { simulated: boolean } }>(`/api/nexai/prospects/${id}/draft`, "POST", { stepType: "initial" });
+      const res = await apiSend<{ draft: { simulated: boolean } }>(`/api/nexai/prospects/${id}/draft`, "POST", { stepType: "initial", force });
+      setDraftEdit(null);
       setNotice(res.draft.simulated ? "Generated a simulated email draft (no live AI credentials)." : "Live email draft generated.");
       reload();
     } catch (e) {
-      setNotice(`Draft failed: ${(e as Error).message}`);
+      // Overwrite guard — ask for explicit confirmation, never overwrite silently.
+      const msg = (e as Error).message;
+      if (/replace|approved|edited/i.test(msg)) {
+        if (confirm(`${msg}\n\nRegenerate anyway?`)) {
+          await generateDraft(true);
+          return;
+        }
+        setNotice("Regeneration cancelled — your saved draft is unchanged.");
+      } else {
+        setNotice(`Draft failed: ${msg}`);
+      }
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const saveDraftEdit = async () => {
+    if (!draftEdit) return;
+    setBusy("draft-save");
+    try {
+      await apiSend(`/api/nexai/prospects/${id}/draft`, "PATCH", draftEdit);
+      setDraftEdit(null);
+      setNotice("Draft edits saved.");
+      reload();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const approveDraft = async () => {
+    setBusy("draft-approve");
+    try {
+      await apiSend(`/api/nexai/prospects/${id}/draft`, "PATCH", { approved: true });
+      setNotice("Draft approved — not sent (sending is disabled).");
+      reload();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const reviewContact = async (dmId: string, action: "approve" | "dismiss") => {
+    setBusy(`dm-${dmId}`);
+    try {
+      if (action === "approve") {
+        await apiSend(`/api/nexai/prospects/${id}/contacts/${dmId}`, "PATCH", { approve: true });
+      } else {
+        await apiSend(`/api/nexai/prospects/${id}/contacts/${dmId}`, "DELETE");
+      }
+      reload();
     } finally {
       setBusy(null);
     }
@@ -189,12 +262,15 @@ export default function ProspectDetailPage() {
               <ScoreBar score={p.fitScore} />
             </div>
           </div>
-          <div className="nx-row" style={{ gap: 8 }}>
+          <div className="nx-row" style={{ gap: 8, flexWrap: "wrap" }}>
             <button className="nx-btn" disabled={busy === "research"} onClick={runResearch}>
               {busy === "research" ? "Researching…" : p.research ? "Re-run research" : "Generate research"}
             </button>
-            <button className="nx-btn nx-btn-primary" disabled={busy === "draft"} onClick={generateDraft}>
-              {busy === "draft" ? "Drafting…" : "Generate email draft"}
+            <button className="nx-btn" disabled={busy === "enrich"} onClick={enrichContacts}>
+              {busy === "enrich" ? "Enriching…" : "Enrich contacts"}
+            </button>
+            <button className="nx-btn nx-btn-primary" disabled={busy === "draft"} onClick={() => generateDraft(false)}>
+              {busy === "draft" ? "Drafting…" : p.draftEmail ? "Regenerate draft" : "Generate email draft"}
             </button>
           </div>
         </div>
@@ -343,42 +419,94 @@ export default function ProspectDetailPage() {
         <div className="nx-grid">
           <Card>
             <div className="nx-spread" style={{ marginBottom: 12 }}>
-              <strong>Decision makers</strong>
-              <span className="nx-muted" style={{ fontSize: 12 }}>{p.decisionMakers.length}</span>
+              <div className="nx-row" style={{ gap: 10 }}>
+                <strong>Decision makers</strong>
+                {reviewCount > 0 && <span className="nx-badge nx-badge-amber">{reviewCount} need review</span>}
+              </div>
+              <button className="nx-btn nx-btn-sm" disabled={busy === "enrich"} onClick={enrichContacts}>
+                {busy === "enrich" ? "Enriching…" : "Enrich"}
+              </button>
             </div>
             {p.decisionMakers.length === 0 ? (
-              <div className="nx-muted" style={{ fontSize: 13 }}>No contacts found yet.</div>
+              <EmptyState
+                title="No contacts yet"
+                hint="Run enrichment to find decision-makers and verify their emails."
+                action={<button className="nx-btn nx-btn-primary" disabled={busy === "enrich"} onClick={enrichContacts}>{busy === "enrich" ? "Enriching…" : "Enrich contacts"}</button>}
+              />
             ) : (
-              p.decisionMakers.map((dm) => (
-                <div key={dm.id} style={{ padding: "10px 0", borderBottom: "1px solid rgba(30,43,71,0.5)" }}>
-                  <div className="nx-spread">
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 13.5 }}>{dm.name}</div>
-                      <div className="nx-muted" style={{ fontSize: 12 }}>{dm.title}{dm.seniority ? ` · ${dm.seniority}` : ""}</div>
+              p.decisionMakers.map((dm) => {
+                const needsReview = dm.reviewStatus === "needs_review";
+                return (
+                  <div key={dm.id} style={{ padding: "11px 0", borderBottom: "1px solid rgba(30,43,71,0.5)" }}>
+                    <div className="nx-spread">
+                      <div>
+                        <div className="nx-row" style={{ gap: 7 }}>
+                          <span style={{ fontWeight: 600, fontSize: 13.5 }}>{dm.name}</span>
+                          {dm.simulated && <span className="nx-badge nx-badge-purple">Simulated</span>}
+                        </div>
+                        <div className="nx-muted" style={{ fontSize: 12 }}>{dm.title}{dm.seniority ? ` · ${dm.seniority}` : ""}</div>
+                      </div>
+                      <VerifyBadge status={dm.emailVerification} />
                     </div>
-                    <VerifyBadge status={dm.emailVerification} />
+                    {dm.email && <div className="nx-mono nx-dim" style={{ fontSize: 12, marginTop: 5 }}>{dm.email}</div>}
+                    <div className="nx-row" style={{ gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+                      {dm.companyMatch && (
+                        <span className={`nx-badge ${dm.companyMatch === "match" ? "nx-badge-green" : dm.companyMatch === "mismatch" ? "nx-badge-red" : "nx-badge-amber"}`}>
+                          {dm.companyMatch === "match" ? "Company match" : dm.companyMatch === "mismatch" ? "Domain mismatch" : "Match uncertain"}
+                        </span>
+                      )}
+                      {dm.checkedAt && <span className="nx-muted" style={{ fontSize: 11 }}>Checked {relativeTime(dm.checkedAt)}</span>}
+                      {dm.linkedinUrl && <a href={dm.linkedinUrl} target="_blank" rel="noreferrer" className="nx-link" style={{ fontSize: 12 }}>LinkedIn ↗</a>}
+                      {dm.sources.length > 0 && <span className="nx-muted" style={{ fontSize: 11 }}>{dm.sources.length} source{dm.sources.length > 1 ? "s" : ""}</span>}
+                    </div>
+                    {needsReview && (
+                      <div style={{ marginTop: 8, background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 8, padding: "8px 10px" }}>
+                        <div className="nx-row" style={{ gap: 6 }}>
+                          <span className="nx-badge nx-badge-amber">Needs review</span>
+                          <span className="nx-dim" style={{ fontSize: 12 }}>{dm.reviewReason}</span>
+                        </div>
+                        <div className="nx-row" style={{ gap: 8, marginTop: 8 }}>
+                          <button className="nx-btn nx-btn-sm" disabled={busy === `dm-${dm.id}`} onClick={() => reviewContact(dm.id, "approve")}>Approve</button>
+                          <button className="nx-btn nx-btn-sm nx-btn-danger" disabled={busy === `dm-${dm.id}`} onClick={() => reviewContact(dm.id, "dismiss")}>Dismiss</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {dm.email && <div className="nx-mono nx-dim" style={{ fontSize: 12, marginTop: 5 }}>{dm.email}</div>}
-                  <div className="nx-row" style={{ gap: 10, marginTop: 6 }}>
-                    {dm.linkedinUrl && <a href={dm.linkedinUrl} target="_blank" rel="noreferrer" className="nx-link" style={{ fontSize: 12 }}>LinkedIn ↗</a>}
-                    {dm.sources.length > 0 && <span className="nx-muted" style={{ fontSize: 11 }}>{dm.sources.length} source{dm.sources.length > 1 ? "s" : ""}</span>}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </Card>
 
           <Card>
             <div className="nx-spread" style={{ marginBottom: 12 }}>
               <strong>Email draft</strong>
-              {p.draftEmail && <SimBadge simulated={p.draftEmail.simulated} />}
+              <div className="nx-row" style={{ gap: 6 }}>
+                {p.draftEmail?.approved && <span className="nx-badge nx-badge-green">Approved</span>}
+                {p.draftEmail?.edited && !p.draftEmail?.approved && <span className="nx-badge nx-badge-blue">Edited</span>}
+                {p.draftEmail && <SimBadge simulated={p.draftEmail.simulated} />}
+              </div>
             </div>
             {!p.draftEmail ? (
               <EmptyState
                 title="No draft yet"
-                hint="Generate a personalised draft from the research above."
-                action={<button className="nx-btn nx-btn-primary" disabled={busy === "draft"} onClick={generateDraft}>{busy === "draft" ? "Drafting…" : "Generate draft"}</button>}
+                hint="Generate a personalised intro from the research report and Nexai's offer."
+                action={<button className="nx-btn nx-btn-primary" disabled={busy === "draft"} onClick={() => generateDraft(false)}>{busy === "draft" ? "Drafting…" : "Generate draft"}</button>}
               />
+            ) : draftEdit ? (
+              <div>
+                <div className="nx-field">
+                  <label className="nx-label">Subject</label>
+                  <input className="nx-input" value={draftEdit.subject} onChange={(e) => setDraftEdit({ ...draftEdit, subject: e.target.value })} />
+                </div>
+                <div className="nx-field">
+                  <label className="nx-label">Body</label>
+                  <textarea className="nx-textarea" style={{ minHeight: 200 }} value={draftEdit.body} onChange={(e) => setDraftEdit({ ...draftEdit, body: e.target.value })} />
+                </div>
+                <div className="nx-row" style={{ gap: 8 }}>
+                  <button className="nx-btn nx-btn-primary" disabled={busy === "draft-save"} onClick={saveDraftEdit}>{busy === "draft-save" ? "Saving…" : "Save edits"}</button>
+                  <button className="nx-btn" onClick={() => setDraftEdit(null)}>Cancel</button>
+                </div>
+              </div>
             ) : (
               <div>
                 <div className="nx-label">Subject</div>
@@ -386,6 +514,13 @@ export default function ProspectDetailPage() {
                 <div className="nx-label">Body</div>
                 <div className="nx-dim" style={{ fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap", background: "var(--nx-bg-2)", border: "1px solid var(--nx-border)", borderRadius: 9, padding: 12 }}>
                   {p.draftEmail.body}
+                </div>
+                <div className="nx-row" style={{ gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                  <button className="nx-btn nx-btn-sm" onClick={() => setDraftEdit({ subject: p.draftEmail!.subject, body: p.draftEmail!.body })}>Edit</button>
+                  {!p.draftEmail.approved && (
+                    <button className="nx-btn nx-btn-sm nx-btn-primary" disabled={busy === "draft-approve"} onClick={approveDraft}>{busy === "draft-approve" ? "Approving…" : "Approve"}</button>
+                  )}
+                  <button className="nx-btn nx-btn-sm nx-btn-ghost" disabled={busy === "draft"} onClick={() => generateDraft(false)}>Regenerate</button>
                 </div>
                 <div className="nx-muted" style={{ fontSize: 11, marginTop: 10 }}>
                   Draft · not sent · sending is disabled during development

@@ -43,6 +43,26 @@ function ProviderCard({ p }: { p: ProviderStatus }) {
           {p.docsUrl && <> · <a href={p.docsUrl} target="_blank" rel="noreferrer" className="nx-link">Get key ↗</a></>}
         </div>
       )}
+
+      {p.plan && (
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--nx-border)" }}>
+          <div className="nx-row" style={{ gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+            <span className="nx-label" style={{ margin: 0 }}>Live integration plan</span>
+            {p.plan.reusesFirecrawl && <span className="nx-badge nx-badge-blue">Reuses Firecrawl</span>}
+            {p.plan.implemented ? (
+              <span className="nx-badge nx-badge-green">Live path ready</span>
+            ) : (
+              <span className="nx-badge nx-badge-amber">Not implemented yet</span>
+            )}
+            {p.plan.envPlaceholder && <span className="nx-badge nx-badge-red">Placeholder env</span>}
+          </div>
+          <div className="nx-dim" style={{ fontSize: 12, lineHeight: 1.5 }}>
+            <div><strong className="nx-dim">Service:</strong> {p.plan.liveService}</div>
+            <div><strong className="nx-dim">API:</strong> {p.plan.apiName}</div>
+            {p.plan.note && <div className="nx-muted" style={{ marginTop: 4 }}>{p.plan.note}</div>}
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

@@ -24,6 +24,14 @@ function status(): ProviderStatus {
     requiredEnv: [...REQUIRED],
     missingEnv: missingEnv(REQUIRED),
     docsUrl: "https://www.firecrawl.dev/app/api-keys",
+    plan: {
+      liveService: "Firecrawl + OpenAI",
+      apiName: "Firecrawl scrape/crawl + OpenAI extraction (existing Fire Enrich pipeline)",
+      reusesFirecrawl: true,
+      implemented: true, // research-live.ts delegates to the existing pipeline
+      envPlaceholder: false,
+      note: "Live path reuses the bundled Fire Enrich multi-agent pipeline once both keys are set.",
+    },
   };
 }
 

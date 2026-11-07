@@ -156,6 +156,7 @@ function ProspectsInner() {
             <tbody>
               {data.prospects.map((p) => {
                 const best = p.decisionMakers[0];
+                const reviewCount = p.decisionMakers.filter((d) => d.reviewStatus === "needs_review").length;
                 return (
                   <tr key={p.id} onClick={() => router.push(`/dashboard/prospects/${p.id}`)}>
                     <td>
@@ -169,7 +170,10 @@ function ProspectsInner() {
                       {best ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                           <span style={{ fontSize: 12.5 }}>{best.name}</span>
-                          <VerifyBadge status={best.emailVerification} />
+                          <div className="nx-row" style={{ gap: 5 }}>
+                            <VerifyBadge status={best.emailVerification} />
+                            {reviewCount > 0 && <span className="nx-badge nx-badge-amber">{reviewCount} review</span>}
+                          </div>
                         </div>
                       ) : (
                         <span className="nx-muted">None</span>
