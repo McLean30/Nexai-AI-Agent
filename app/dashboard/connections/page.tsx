@@ -46,8 +46,14 @@ function ProviderCard({ p }: { p: ProviderStatus }) {
   );
 }
 
+interface StorageStatus {
+  adapter: string;
+  durable: boolean;
+  note: string;
+}
+
 export default function ConnectionsPage() {
-  const { data, loading, error, reload } = useApi<{ providers: ProviderStatus[]; settings: Settings }>("/api/nexai/connections");
+  const { data, loading, error, reload } = useApi<{ providers: ProviderStatus[]; settings: Settings; storage: StorageStatus }>("/api/nexai/connections");
   const [settings, setSettings] = useState<Settings | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -82,6 +88,29 @@ export default function ConnectionsPage() {
           <p className="nx-sub">Server-side credentials and campaign safeguards.</p>
         </div>
       </div>
+
+      <div className="nx-label" style={{ marginBottom: 10 }}>Storage</div>
+      <Card style={{ marginBottom: 24, borderColor: data.storage.durable ? "rgba(52,211,153,0.3)" : "rgba(251,191,36,0.35)" }}>
+        <div className="nx-spread" style={{ flexWrap: "wrap", gap: 10 }}>
+          <div>
+            <strong style={{ fontSize: 14 }}>
+              {data.storage.adapter === "upstash-redis" ? "Upstash Redis (hosted)" : "Local file store"}
+            </strong>
+            <p className="nx-dim" style={{ fontSize: 12.5, lineHeight: 1.5, marginTop: 4, maxWidth: 620 }}>
+              {data.storage.note}
+            </p>
+          </div>
+          <span className={`nx-badge ${data.storage.durable ? "nx-badge-green" : "nx-badge-amber"}`}>
+            {data.storage.durable ? "Durable" : "Not durable on Vercel"}
+          </span>
+        </div>
+        {!data.storage.durable && (
+          <div className="nx-muted" style={{ fontSize: 11.5, marginTop: 10 }}>
+            For hosted deployments, set <code className="nx-mono" style={{ color: "#9ad8f6" }}>UPSTASH_REDIS_REST_URL</code> and{" "}
+            <code className="nx-mono" style={{ color: "#9ad8f6" }}>UPSTASH_REDIS_REST_TOKEN</code> to switch to the hosted database automatically.
+          </div>
+        )}
+      </Card>
 
       <div className="nx-label" style={{ marginBottom: 10 }}>Providers</div>
       <div className="nx-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", marginBottom: 24 }}>

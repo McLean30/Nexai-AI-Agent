@@ -1,5 +1,3 @@
-import { promises as fs } from "fs";
-import path from "path";
 import type {
   ActivityEvent,
   OverviewMetrics,
@@ -10,41 +8,26 @@ import type {
 } from "./types";
 import { QUALIFICATION_STATUSES } from "./types";
 import { buildSeedData, DEFAULT_SETTINGS } from "./seed";
+import { getStorage } from "./storage";
 
-// Simple JSON file store. Persists to .data/store.json (git-ignored) so edits
-// survive application restarts. On first run it is seeded from the demo dataset.
-// Writes are atomic (temp file + rename) and serialized through a promise chain
-// to avoid interleaved writers within a single dev process.
-
-const DATA_DIR = path.join(process.cwd(), ".data");
-const STORE_PATH = path.join(DATA_DIR, "store.json");
+// Store access layer. Persistence is delegated to a pluggable StorageAdapter
+// (Upstash Redis on Vercel, local file in dev — see ./storage). On first run
+// the backing store is seeded from the demo dataset. Writes are serialized
+// through a promise chain to avoid interleaved writers within one process.
 
 let writeChain: Promise<unknown> = Promise.resolve();
 
-async function ensureStore(): Promise<void> {
-  try {
-    await fs.access(STORE_PATH);
-  } catch {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    const seed = buildSeedData();
-    await fs.writeFile(STORE_PATH, JSON.stringify(seed, null, 2), "utf8");
-  }
-}
-
 export async function readStore(): Promise<StoreData> {
-  await ensureStore();
-  const raw = await fs.readFile(STORE_PATH, "utf8");
-  const data = JSON.parse(raw) as StoreData;
+  const storage = getStorage();
+  let data = await storage.load();
+  if (!data) {
+    // First run against this backing store — seed it with the demo dataset.
+    data = buildSeedData();
+    await storage.save(data);
+  }
   // Backfill settings defaults if an older store is loaded.
   data.settings = { ...DEFAULT_SETTINGS, ...(data.settings ?? {}) };
   return data;
-}
-
-async function atomicWrite(data: StoreData): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  const tmp = `${STORE_PATH}.${process.pid}.${Date.now()}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(data, null, 2), "utf8");
-  await fs.rename(tmp, STORE_PATH);
 }
 
 /** Read-modify-write under a serialized chain. Returns the mutator's result. */
@@ -54,7 +37,7 @@ export async function mutateStore<T>(
   const run = async (): Promise<T> => {
     const data = await readStore();
     const result = await fn(data);
-    await atomicWrite(data);
+    await getStorage().save(data);
     return result;
   };
   const p = writeChain.then(run, run);
