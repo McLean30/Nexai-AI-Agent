@@ -16,6 +16,7 @@ export function hasAllEnv(required: readonly string[]): boolean {
 // Required env for each provider. These are the live-mode credentials; until
 // they exist the provider stays in mock mode and reports "Not connected".
 export const PROVIDER_ENV = {
+  discovery: ["DISCOVERY_API_KEY"],
   research: ["FIRECRAWL_API_KEY", "OPENAI_API_KEY"],
   enrichment: ["ENRICHMENT_API_KEY"],
   aiWriting: ["OPENAI_API_KEY"],

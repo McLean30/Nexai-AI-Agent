@@ -7,6 +7,7 @@ import type { ProviderStatus } from "@/lib/nexai/providers/types";
 import type { Settings } from "@/lib/nexai/types";
 
 const KIND_LABEL: Record<string, string> = {
+  discovery: "Discovery",
   research: "Research",
   enrichment: "Contact enrichment",
   aiWriting: "AI writing",

@@ -1,9 +1,11 @@
 import type {
   DecisionMaker,
+  DiscoveryCandidate,
   EmailMessage,
   Prospect,
   ProviderKind,
   ResearchReport,
+  TargetingCriteria,
 } from "../types";
 
 // Provider interfaces. Each capability is defined behind an interface so a mock
@@ -20,6 +22,12 @@ export interface ProviderStatus {
   requiredEnv: string[];
   missingEnv: string[];
   docsUrl?: string;
+}
+
+export interface DiscoveryProvider {
+  status(): ProviderStatus;
+  /** Surface candidate companies matching the targeting criteria. */
+  discover(criteria: TargetingCriteria): Promise<DiscoveryCandidate[]>;
 }
 
 export interface ResearchProvider {

@@ -5,7 +5,12 @@ export type ISODate = string;
 
 export type RecordOrigin = "demo" | "live";
 
-export type ProviderKind = "research" | "enrichment" | "aiWriting" | "email";
+export type ProviderKind =
+  | "discovery"
+  | "research"
+  | "enrichment"
+  | "aiWriting"
+  | "email";
 
 export type QualificationStatus =
   | "new"
@@ -67,10 +72,32 @@ export interface DecisionMaker {
   sources: Source[];
 }
 
+/** A verifiable company fact (as reported by the research source). */
+export interface ResearchFact {
+  label: string;
+  value: string;
+}
+
+/** Evidence weighed against the ideal-customer profile. */
+export interface QualificationEvidence {
+  point: string;
+  assessment: "fit" | "watch" | "against";
+}
+
+/** A custom-app opportunity — an inference, never presented as a fact. */
+export interface CustomAppIdea {
+  title: string;
+  problem: string;
+  idea: string;
+  value: string;
+}
+
 export interface ResearchReport {
   generatedAt: ISODate;
   simulated: boolean;
   summary: string;
+
+  // --- Legacy flat fields (kept for older records) ---
   industry?: string;
   employeeRange?: string;
   revenueRange?: string;
@@ -79,6 +106,22 @@ export interface ResearchReport {
   techStack?: string[];
   signals: string[];
   sources: Source[];
+
+  // --- Structured Nexai report (new) ---
+  // Facts the research source reported. In simulated mode these are
+  // placeholders and the report is flagged simulated.
+  facts?: ResearchFact[];
+  // Evidence for/against the Nexai ICP (fit vs watch vs against).
+  qualificationEvidence?: QualificationEvidence[];
+  // Honest gaps — what we could NOT determine.
+  unknowns?: string[];
+  // Questions to put to the owner/MD about how the business runs.
+  operationalQuestions?: string[];
+  // Inferred opportunities for Nexai custom apps — explicitly inference.
+  customAppIdeas?: CustomAppIdea[];
+  // When true, the `sources` above are illustrative placeholders, not real
+  // pages that were fetched or verified.
+  sourcesSimulated?: boolean;
 }
 
 export type EmailStepType =
@@ -207,3 +250,62 @@ export interface OverviewMetrics {
   byStatus: Record<QualificationStatus, number>;
   demoMode: boolean;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Prospect discovery
+// ─────────────────────────────────────────────────────────────
+
+/** Targeting criteria for the discovery engine. Defaults encode Nexai's ICP:
+ *  UK trade & field-service businesses, ~10–50 staff, owner/MD as buyer. */
+export interface TargetingCriteria {
+  sectors: string[];
+  location: string;
+  minStaff: number;
+  maxStaff: number;
+  buyerRoles: string[];
+  keywords?: string;
+  limit?: number;
+}
+
+export type CandidateSource = "discovery" | "manual" | "csv";
+
+/** A company surfaced by discovery/import — not yet a saved prospect. */
+export interface DiscoveryCandidate {
+  companyName: string;
+  domain: string; // normalised
+  website: string;
+  sector?: string;
+  location?: string;
+  employeeRange?: string;
+  buyerHint?: string;
+  rationale: string; // why it was surfaced (simulated signal)
+  simulated: boolean;
+  candidateSource: CandidateSource;
+  // Populated by the API: id of an existing prospect with the same domain.
+  duplicateOfProspectId?: string;
+}
+
+export const DEFAULT_TARGETING: TargetingCriteria = {
+  sectors: ["Electrical", "Plumbing & Heating", "HVAC", "Field Service"],
+  location: "United Kingdom",
+  minStaff: 10,
+  maxStaff: 50,
+  buyerRoles: ["Owner", "Managing Director"],
+  keywords: "",
+  limit: 12,
+};
+
+export const TRADE_SECTORS: string[] = [
+  "Electrical",
+  "Plumbing & Heating",
+  "HVAC",
+  "Roofing",
+  "Landscaping & Grounds",
+  "Security & Fire",
+  "Facilities Management",
+  "Pest Control",
+  "Drainage",
+  "Renewables & Solar",
+  "Building & Construction",
+  "Field Service",
+];

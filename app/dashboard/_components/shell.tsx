@@ -17,6 +17,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
     section: "Pipeline",
     items: [
       { href: "/dashboard", label: "Overview", icon: icon("M3 13h8V3H3zM13 21h8V3h-8zM3 21h8v-6H3z") },
+      { href: "/dashboard/discovery", label: "Discovery", icon: icon("M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.35-4.35") },
       { href: "/dashboard/prospects", label: "Prospects", icon: icon("M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75") },
       { href: "/dashboard/campaign", label: "Campaign", icon: icon("M3 11l19-9-9 19-2-8-8-2z") },
       { href: "/dashboard/conversations", label: "Conversations", icon: icon("M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z") },
@@ -96,7 +97,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                     {item.icon}
                     {item.label}
                     {item.href === "/dashboard/connections" && (
-                      <span className="nx-nav-badge">{liveCount}/4</span>
+                      <span className="nx-nav-badge">{liveCount}/5</span>
                     )}
                   </Link>
                 ),
@@ -106,7 +107,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
           <div style={{ marginTop: "auto", paddingTop: 16 }}>
             <div className="nx-tag" style={{ display: "block", textAlign: "center" }}>
-              {liveCount === 0 ? "All providers in mock mode" : `${liveCount}/4 live`}
+              {liveCount === 0 ? "All providers in mock mode" : `${liveCount}/5 live`}
             </div>
           </div>
         </aside>

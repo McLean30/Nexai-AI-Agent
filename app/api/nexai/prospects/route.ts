@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logActivity, mutateStore, newId, readStore } from "@/lib/nexai/store";
+import { normalizeDomain } from "@/lib/nexai/domain";
 import type { Prospect, QualificationStatus } from "@/lib/nexai/types";
 
 export const runtime = "nodejs";
@@ -35,10 +36,20 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
   const companyName = (body.companyName ?? "").trim();
-  const domain = (body.domain ?? "").trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  const domain = normalizeDomain(body.domain ?? body.website ?? "");
 
   if (!companyName || !domain) {
     return NextResponse.json({ error: "companyName and domain are required" }, { status: 400 });
+  }
+
+  // Deduplicate by normalised domain.
+  const existing = await readStore();
+  const dup = existing.prospects.find((p) => normalizeDomain(p.domain) === domain);
+  if (dup) {
+    return NextResponse.json(
+      { error: `A prospect with domain ${domain} already exists.`, duplicateOfProspectId: dup.id },
+      { status: 409 },
+    );
   }
 
   const nowIso = new Date().toISOString();

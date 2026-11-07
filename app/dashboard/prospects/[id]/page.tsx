@@ -223,15 +223,92 @@ export default function ProspectDetailPage() {
             />
           ) : (
             <div>
+              {p.research.simulated && (
+                <div className="nx-badge nx-badge-purple" style={{ marginBottom: 10 }}>
+                  Simulated report — figures &amp; sources are illustrative, not verified
+                </div>
+              )}
               <p className="nx-dim" style={{ fontSize: 13.5, lineHeight: 1.6 }}>{p.research.summary}</p>
-              <hr className="nx-divider" />
-              <div className="nx-grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <Field label="Industry" value={p.research.industry} />
-                <Field label="Employees" value={p.research.employeeRange} />
-                <Field label="Revenue" value={p.research.revenueRange} />
-                <Field label="Funding" value={p.research.fundingStage} />
-                <Field label="Raised" value={p.research.totalRaised} />
-              </div>
+
+              {/* Company facts */}
+              {p.research.facts && p.research.facts.length > 0 ? (
+                <>
+                  <hr className="nx-divider" />
+                  <div className="nx-label">Company facts</div>
+                  <div className="nx-grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    {p.research.facts.map((f, i) => <Field key={i} label={f.label} value={f.value} />)}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <hr className="nx-divider" />
+                  <div className="nx-grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <Field label="Industry" value={p.research.industry} />
+                    <Field label="Employees" value={p.research.employeeRange} />
+                    <Field label="Revenue" value={p.research.revenueRange} />
+                    <Field label="Funding" value={p.research.fundingStage} />
+                  </div>
+                </>
+              )}
+
+              {/* Qualification evidence */}
+              {p.research.qualificationEvidence && p.research.qualificationEvidence.length > 0 && (
+                <>
+                  <div className="nx-label" style={{ marginTop: 14 }}>Qualification evidence</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {p.research.qualificationEvidence.map((e, i) => (
+                      <div key={i} className="nx-row" style={{ gap: 8, alignItems: "flex-start" }}>
+                        <span className={`nx-badge ${e.assessment === "fit" ? "nx-badge-green" : e.assessment === "against" ? "nx-badge-red" : "nx-badge-amber"}`} style={{ flexShrink: 0 }}>
+                          {e.assessment === "fit" ? "Fit" : e.assessment === "against" ? "Against" : "Watch"}
+                        </span>
+                        <span className="nx-dim" style={{ fontSize: 12.5, lineHeight: 1.5 }}>{e.point}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Unknowns */}
+              {p.research.unknowns && p.research.unknowns.length > 0 && (
+                <>
+                  <div className="nx-label" style={{ marginTop: 14 }}>Unknowns (not yet determined)</div>
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7 }} className="nx-muted">
+                    {p.research.unknowns.map((u, i) => <li key={i}>{u}</li>)}
+                  </ul>
+                </>
+              )}
+
+              {/* Operational questions */}
+              {p.research.operationalQuestions && p.research.operationalQuestions.length > 0 && (
+                <>
+                  <div className="nx-label" style={{ marginTop: 14 }}>Questions for the owner / MD</div>
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7 }} className="nx-dim">
+                    {p.research.operationalQuestions.map((q, i) => <li key={i}>{q}</li>)}
+                  </ul>
+                </>
+              )}
+
+              {/* Custom-app ideas (inferred) */}
+              {p.research.customAppIdeas && p.research.customAppIdeas.length > 0 && (
+                <>
+                  <div className="nx-row" style={{ gap: 8, marginTop: 16 }}>
+                    <div className="nx-label" style={{ margin: 0 }}>Custom-app opportunities</div>
+                    <span className="nx-badge nx-badge-blue">Inferred — not fact</span>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+                    {p.research.customAppIdeas.map((idea, i) => (
+                      <div key={i} style={{ background: "var(--nx-bg-2)", border: "1px solid var(--nx-border)", borderRadius: 10, padding: 12 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{idea.title}</div>
+                        <div className="nx-muted" style={{ fontSize: 12, marginTop: 5 }}><strong className="nx-dim">Problem:</strong> {idea.problem}</div>
+                        <div className="nx-muted" style={{ fontSize: 12, marginTop: 3 }}><strong className="nx-dim">Idea:</strong> {idea.idea}</div>
+                        <div className="nx-muted" style={{ fontSize: 12, marginTop: 3 }}><strong className="nx-dim">Value:</strong> {idea.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Legacy fields (older seed records) */}
               {p.research.techStack && p.research.techStack.length > 0 && (
                 <>
                   <div className="nx-label" style={{ marginTop: 14 }}>Tech stack</div>
@@ -240,7 +317,7 @@ export default function ProspectDetailPage() {
                   </div>
                 </>
               )}
-              {p.research.signals.length > 0 && (
+              {p.research.signals && p.research.signals.length > 0 && (
                 <>
                   <div className="nx-label" style={{ marginTop: 14 }}>Buying signals</div>
                   <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7 }} className="nx-dim">
@@ -248,10 +325,15 @@ export default function ProspectDetailPage() {
                   </ul>
                 </>
               )}
-              <div className="nx-label" style={{ marginTop: 14 }}>Sources</div>
+
+              {/* Sources */}
+              <div className="nx-label" style={{ marginTop: 16 }}>
+                {p.research.sourcesSimulated ? "Sources (illustrative — not real pages)" : "Sources"}
+              </div>
               <Sources sources={p.research.sources} />
               <div className="nx-muted" style={{ fontSize: 11, marginTop: 12 }}>
                 Generated {relativeTime(p.research.generatedAt)}
+                {p.research.simulated && " · simulated"}
               </div>
             </div>
           )}
