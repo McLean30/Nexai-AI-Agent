@@ -28,19 +28,14 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  let apiKey = process.env.FIRECRAWL_API_KEY;
-  
+  // Server-side credential only — never read from request headers/browser.
+  const apiKey = process.env.FIRECRAWL_API_KEY;
+
   if (!apiKey) {
-    const headerApiKey = request.headers.get('X-Firecrawl-API-Key');
-    
-    if (!headerApiKey) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'API configuration error. Please try again later or contact support.' 
-      }, { status: 500 });
-    }
-    
-    apiKey = headerApiKey;
+    return NextResponse.json({
+      success: false,
+      error: 'Firecrawl is not connected. Configure FIRECRAWL_API_KEY on the server.'
+    }, { status: 500 });
   }
 
   try {

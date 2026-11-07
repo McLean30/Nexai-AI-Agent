@@ -13,8 +13,8 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fire Enrich v2",
-  description: "Enrich your data with AI-powered insights",
+  title: "Nexai Digital — Prospect Engine",
+  description: "Prospect research and outreach for Nexai Digital.",
   icons: {
     icon: "/favicon.png",
   },

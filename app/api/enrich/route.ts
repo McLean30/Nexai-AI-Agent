@@ -51,8 +51,10 @@ export async function POST(request: NextRequest) {
     activeSessions.set(sessionId, abortController);
 
     // Check environment variables and headers for API keys
-    const openaiApiKey = process.env.OPENAI_API_KEY || request.headers.get('X-OpenAI-API-Key');
-    const firecrawlApiKey = process.env.FIRECRAWL_API_KEY || request.headers.get('X-Firecrawl-API-Key');
+    // Server-side credentials only. Keys are never read from request headers
+    // or the browser — they must be configured in the server environment.
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
     
     if (!openaiApiKey || !firecrawlApiKey) {
       console.error('Missing API keys:', { 

@@ -19,8 +19,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get API keys
-    const openaiApiKey = process.env.OPENAI_API_KEY || request.headers.get('X-OpenAI-API-Key');
-    const firecrawlApiKey = process.env.FIRECRAWL_API_KEY || request.headers.get('X-Firecrawl-API-Key');
+    // Server-side credentials only — never read from request headers/browser.
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    const firecrawlApiKey = process.env.FIRECRAWL_API_KEY;
 
     if (!openaiApiKey || !firecrawlApiKey) {
       return NextResponse.json(

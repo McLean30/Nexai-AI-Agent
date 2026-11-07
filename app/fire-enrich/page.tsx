@@ -17,8 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import Input from "@/components/ui/input";
-import { toast } from "sonner";
 
 export default function CSVEnrichmentPage() {
   const [step, setStep] = useState<"upload" | "setup" | "enrichment">("upload");
@@ -30,9 +28,6 @@ export default function CSVEnrichmentPage() {
   const [selectedFields, setSelectedFields] = useState<EnrichmentField[]>([]);
   const [isCheckingEnv, setIsCheckingEnv] = useState(true);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [firecrawlApiKey, setFirecrawlApiKey] = useState<string>("");
-  const [openaiApiKey, setOpenaiApiKey] = useState<string>("");
-  const [isValidatingApiKey, setIsValidatingApiKey] = useState(false);
   const [missingKeys, setMissingKeys] = useState<{
     firecrawl: boolean;
     openai: boolean;
@@ -50,25 +45,9 @@ export default function CSVEnrichmentPage() {
         if (!response.ok) {
           throw new Error("Failed to check environment");
         }
-        const data = await response.json();
-        const hasFirecrawl = data.environmentStatus.FIRECRAWL_API_KEY;
-        const hasOpenAI = data.environmentStatus.OPENAI_API_KEY;
-
-        if (!hasFirecrawl) {
-          // Check localStorage for saved API key
-          const savedKey = localStorage.getItem("firecrawl_api_key");
-          if (savedKey) {
-            setFirecrawlApiKey(savedKey);
-          }
-        }
-
-        if (!hasOpenAI) {
-          // Check localStorage for saved API key
-          const savedKey = localStorage.getItem("openai_api_key");
-          if (savedKey) {
-            setOpenaiApiKey(savedKey);
-          }
-        }
+        // Credentials live server-side only. We only read connection status
+        // here — never keys — and never touch the browser for key storage.
+        await response.json();
       } catch (error) {
         console.error("Error checking environment:", error);
       } finally {
@@ -85,19 +64,12 @@ export default function CSVEnrichmentPage() {
     const data = await response.json();
     const hasFirecrawl = data.environmentStatus.FIRECRAWL_API_KEY;
     const hasOpenAI = data.environmentStatus.OPENAI_API_KEY;
-    const savedFirecrawlKey = localStorage.getItem("firecrawl_api_key");
-    const savedOpenAIKey = localStorage.getItem("openai_api_key");
 
-    if (
-      (!hasFirecrawl && !savedFirecrawlKey) ||
-      (!hasOpenAI && !savedOpenAIKey)
-    ) {
-      // Save the CSV data temporarily and show API key modal
+    if (!hasFirecrawl || !hasOpenAI) {
+      // Keys are configured on the server only. Show an informational
+      // "not connected" dialog instead of collecting keys in the browser.
       setPendingCSVData({ rows, columns });
-      setMissingKeys({
-        firecrawl: !hasFirecrawl && !savedFirecrawlKey,
-        openai: !hasOpenAI && !savedOpenAIKey,
-      });
+      setMissingKeys({ firecrawl: !hasFirecrawl, openai: !hasOpenAI });
       setShowApiKeyModal(true);
     } else {
       setCsvData({ rows, columns });
@@ -126,73 +98,14 @@ export default function CSVEnrichmentPage() {
     setSelectedFields([]);
   };
 
-  const openFirecrawlWebsite = () => {
-    window.open("https://www.firecrawl.dev", "_blank");
-  };
-
-  const handleApiKeySubmit = async () => {
-    // Check environment again to see what's missing
-    const response = await fetch("/api/check-env");
-    const data = await response.json();
-    const hasEnvFirecrawl = data.environmentStatus.FIRECRAWL_API_KEY;
-    const hasEnvOpenAI = data.environmentStatus.OPENAI_API_KEY;
-    const hasSavedFirecrawl = localStorage.getItem("firecrawl_api_key");
-    const hasSavedOpenAI = localStorage.getItem("openai_api_key");
-
-    const needsFirecrawl = !hasEnvFirecrawl && !hasSavedFirecrawl;
-    const needsOpenAI = !hasEnvOpenAI && !hasSavedOpenAI;
-
-    if (needsFirecrawl && !firecrawlApiKey.trim()) {
-      toast.error("Please enter a valid Firecrawl API key");
-      return;
-    }
-
-    if (needsOpenAI && !openaiApiKey.trim()) {
-      toast.error("Please enter a valid OpenAI API key");
-      return;
-    }
-
-    setIsValidatingApiKey(true);
-
-    try {
-      // Test the Firecrawl API key if provided
-      if (firecrawlApiKey) {
-        const response = await fetch("/api/scrape", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Firecrawl-API-Key": firecrawlApiKey,
-          },
-          body: JSON.stringify({ url: "https://example.com" }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Invalid Firecrawl API key");
-        }
-
-        // Save the API key to localStorage
-        localStorage.setItem("firecrawl_api_key", firecrawlApiKey);
-      }
-
-      // Save OpenAI API key if provided
-      if (openaiApiKey) {
-        localStorage.setItem("openai_api_key", openaiApiKey);
-      }
-
-      toast.success("API keys saved successfully!");
-      setShowApiKeyModal(false);
-
-      // Process the pending CSV data
-      if (pendingCSVData) {
-        setCsvData(pendingCSVData);
-        setStep("setup");
-        setPendingCSVData(null);
-      }
-    } catch (error) {
-      toast.error("Invalid API key. Please check and try again.");
-      console.error("API key validation error:", error);
-    } finally {
-      setIsValidatingApiKey(false);
+  // Allow previewing the CSV flow even when research is not connected. No keys
+  // are collected in the browser — connect them on the server.
+  const handleContinueWithoutKeys = () => {
+    setShowApiKeyModal(false);
+    if (pendingCSVData) {
+      setCsvData(pendingCSVData);
+      setStep("setup");
+      setPendingCSVData(null);
     }
   };
 
@@ -327,101 +240,60 @@ export default function CSVEnrichmentPage() {
       <Dialog open={showApiKeyModal} onOpenChange={setShowApiKeyModal}>
         <DialogContent className="sm:max-w-md bg-white dark:bg-zinc-900">
           <DialogHeader>
-            <DialogTitle>API Keys Required</DialogTitle>
+            <DialogTitle>Research not connected</DialogTitle>
             <DialogDescription>
-              This tool requires API keys for Firecrawl and OpenAI to enrich
-              your CSV data.
+              Live enrichment needs {missingKeys.firecrawl && "Firecrawl"}
+              {missingKeys.firecrawl && missingKeys.openai && " and "}
+              {missingKeys.openai && "OpenAI"} configured as server-side
+              credentials. For security, API keys are never entered in the
+              browser.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-4 py-4">
-            {missingKeys.firecrawl && (
-              <>
-                <Button
-                  onClick={openFirecrawlWebsite}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Get Firecrawl API Key
-                </Button>
-                <div className="flex flex-col gap-2">
-                  <label
-                    htmlFor="firecrawl-key"
-                    className="text-sm font-medium"
+          <div className="flex flex-col gap-3 py-4 text-sm text-zinc-600 dark:text-zinc-300">
+            <p>
+              Add the required keys to the server environment (<code>.env.local</code>
+              {" "}or the hosting environment), then restart the app. Missing keys to
+              configure:
+            </p>
+            <ul className="list-disc pl-5 space-y-1">
+              {missingKeys.firecrawl && (
+                <li>
+                  <code>FIRECRAWL_API_KEY</code> —{" "}
+                  <a
+                    href="https://www.firecrawl.dev/app/api-keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-blue-400 underline inline-flex items-center gap-1"
                   >
-                    Firecrawl API Key
-                  </label>
-                  <Input
-                    id="firecrawl-key"
-                    type="password"
-                    placeholder="fc-..."
-                    value={firecrawlApiKey}
-                    onChange={(e) => setFirecrawlApiKey(e.target.value)}
-                    disabled={isValidatingApiKey}
-                  />
-                </div>
-              </>
-            )}
-
-            {missingKeys.openai && (
-              <>
-                <Button
-                  onClick={() =>
-                    window.open(
-                      "https://platform.openai.com/api-keys",
-                      "_blank",
-                    )
-                  }
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Get OpenAI API Key
-                </Button>
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="openai-key" className="text-sm font-medium">
-                    OpenAI API Key
-                  </label>
-                  <Input
-                    id="openai-key"
-                    type="password"
-                    placeholder="sk-..."
-                    value={openaiApiKey}
-                    onChange={(e) => setOpenaiApiKey(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !isValidatingApiKey) {
-                        handleApiKeySubmit();
-                      }
-                    }}
-                    disabled={isValidatingApiKey}
-                  />
-                </div>
-              </>
-            )}
+                    get key <ExternalLink className="h-3 w-3" />
+                  </a>
+                </li>
+              )}
+              {missingKeys.openai && (
+                <li>
+                  <code>OPENAI_API_KEY</code> —{" "}
+                  <a
+                    href="https://platform.openai.com/api-keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-blue-400 underline inline-flex items-center gap-1"
+                  >
+                    get key <ExternalLink className="h-3 w-3" />
+                  </a>
+                </li>
+              )}
+            </ul>
+            <p className="text-xs text-zinc-500">
+              You can still preview the enrichment setup, but no live data will be
+              fetched until the server is connected.
+            </p>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowApiKeyModal(false)}
-              disabled={isValidatingApiKey}
-            >
+            <Button variant="outline" onClick={() => setShowApiKeyModal(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={handleApiKeySubmit}
-              disabled={isValidatingApiKey || !firecrawlApiKey.trim()}
-              variant="code"
-            >
-              {isValidatingApiKey ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Validating...
-                </>
-              ) : (
-                "Submit"
-              )}
+            <Button onClick={handleContinueWithoutKeys} variant="code">
+              Preview setup
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -115,22 +115,12 @@ export function EnrichmentTable({
     setStatus("processing");
 
     try {
-      // Get API keys from localStorage if not in environment
-      const firecrawlApiKey = localStorage.getItem("firecrawl_api_key");
-      const openaiApiKey = localStorage.getItem("openai_api_key");
-
+      // API keys are server-side only — never read from the browser or sent
+      // as request headers.
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         ...(useAgents && { "x-use-agents": "true" }),
       };
-
-      // Add API keys to headers if available
-      if (firecrawlApiKey) {
-        headers["X-Firecrawl-API-Key"] = firecrawlApiKey;
-      }
-      if (openaiApiKey) {
-        headers["X-OpenAI-API-Key"] = openaiApiKey;
-      }
 
       const response = await fetch("/api/enrich", {
         method: "POST",
@@ -552,15 +542,10 @@ export function EnrichmentTable({
     ]);
 
     try {
-      const firecrawlApiKey = localStorage.getItem("firecrawl_api_key");
-      const openaiApiKey = localStorage.getItem("openai_api_key");
-
+      // API keys are server-side only — never read from the browser.
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-
-      if (firecrawlApiKey) headers["X-Firecrawl-API-Key"] = firecrawlApiKey;
-      if (openaiApiKey) headers["X-OpenAI-API-Key"] = openaiApiKey;
 
       // Get conversation history (last 10 messages)
       const conversationHistory = agentMessages
