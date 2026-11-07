@@ -69,7 +69,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       <div className="nx-layout">
         <aside className={`nx-sidebar ${open ? "open" : ""}`}>
           <div className="nx-wordmark">
-            <div className="nx-mark">N</div>
+            <div className="nx-mark">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/nexai-mark.webp" alt="Nexai Digital" width={34} height={34} />
+            </div>
             <div>
               <div className="nx-wordmark-text">
                 Nex<span>ai</span>
@@ -122,8 +125,12 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 <path d="M3 12h18M3 6h18M3 18h18" />
               </svg>
             </button>
-            <div className="nx-wordmark-text" style={{ fontSize: 16 }}>
-              Nex<span style={{ color: "#38bdf8" }}>ai</span> Digital
+            <div className="nx-row" style={{ gap: 8 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/nexai-mark.webp" alt="Nexai Digital" width={22} height={26} style={{ objectFit: "contain" }} />
+              <div className="nx-wordmark-text" style={{ fontSize: 16 }}>
+                Nex<span style={{ color: "#38bdf8" }}>ai</span> Digital
+              </div>
             </div>
           </div>
 

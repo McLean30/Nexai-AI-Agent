@@ -47,11 +47,13 @@
 /* ---------- wordmark ---------- */
 .nx-wordmark { display: flex; align-items: center; gap: 10px; padding: 6px 8px 16px; }
 .nx-mark {
-  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
-  background: linear-gradient(135deg, #2563eb, #38bdf8);
-  display: grid; place-items: center; color: white; font-weight: 700; font-size: 17px;
-  box-shadow: 0 0 18px rgba(56, 189, 248, 0.45);
+  width: 38px; height: 44px; border-radius: 10px; flex-shrink: 0;
+  background: radial-gradient(circle at 50% 40%, rgba(56, 189, 248, 0.12), #070b16 70%);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  display: grid; place-items: center; overflow: hidden;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.3);
 }
+.nx-mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .nx-wordmark-text { font-weight: 700; font-size: 18px; letter-spacing: 0.02em; }
 .nx-wordmark-text span { color: var(--nx-accent); }
 .nx-wordmark-sub { font-size: 10px; color: var(--nx-muted); letter-spacing: 0.18em; text-transform: uppercase; }
