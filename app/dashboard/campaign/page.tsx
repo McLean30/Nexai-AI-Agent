@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useApi, apiSend } from "../_components/useApi";
 import { Card, Spinner, ErrorState, EmptyState, StatusPill, OriginBadge } from "../_components/primitives";
 import { relativeTime } from "../_components/format";
+import { emitAgent } from "../_components/agent-bus";
 import type { Campaign, EmailMessage, MailboxEventType, QualificationStatus, Settings } from "@/lib/nexai/types";
 
 type ProspectRow = {
@@ -55,10 +56,14 @@ export default function CampaignPage() {
   const processQueue = async () => {
     setBusy("queue");
     setTick(null);
+    emitAgent("awake", "Processing queue", { simulated: true });
     try {
       const res = await apiSend<{ sent: { company: string }[]; skipped: { company: string; reason: string }[]; rechecked: number }>("/api/nexai/mailbox/process-queue", "POST");
       setTick(`Tick: re-checked ${res.rechecked}, sent ${res.sent.length}${res.skipped.length ? `, skipped ${res.skipped.length}` : ""}.`);
+      emitAgent("completed", `Sent ${res.sent.length} follow-up${res.sent.length === 1 ? "" : "s"}`, { simulated: true });
       reload();
+    } catch {
+      emitAgent("error", "Queue tick failed");
     } finally {
       setBusy(null);
     }
@@ -68,6 +73,9 @@ export default function CampaignPage() {
     setBusy(`sim-${type}`);
     try {
       await apiSend("/api/nexai/mailbox/simulate", "POST", { prospectId, type, body: type === "opt_out" ? "Please unsubscribe me." : type === "out_of_office" ? "Automatic reply: I am out of the office." : "Thanks, tell me more." });
+      if (type === "reply") emitAgent("reply", "Reply received — hand to Kieran", { simulated: true });
+      else if (type === "out_of_office") emitAgent("review", "Out-of-office — review", { simulated: true });
+      else emitAgent("completed", `${type.replace(/_/g, " ")} handled`, { simulated: true });
       setSimFor(null);
       reload();
     } finally {

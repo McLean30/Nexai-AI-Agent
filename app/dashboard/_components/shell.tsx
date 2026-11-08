@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import AgentCharacter from "./agent-character";
 
 type NavItem = { href: string; label: string; icon: React.ReactNode; badge?: string; external?: boolean };
 
@@ -155,6 +156,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </div>
+      <AgentCharacter />
     </div>
   );
 }

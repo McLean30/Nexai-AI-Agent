@@ -6,6 +6,7 @@ import Papa from "papaparse";
 import { useApi, apiSend } from "../_components/useApi";
 import { Card, Spinner, ErrorState, EmptyState } from "../_components/primitives";
 import { normalizeDomain, looksLikeDomain } from "@/lib/nexai/domain";
+import { emitAgent } from "../_components/agent-bus";
 import {
   DEFAULT_TARGETING,
   TRADE_SECTORS,
@@ -85,11 +86,14 @@ export default function DiscoveryPage() {
     setRunning(true);
     setRunError(null);
     setSaveResult(null);
+    emitAgent("researching", "Finding companies", { simulated: true });
     try {
       const res = await apiSend<{ candidates: DiscoveryCandidate[] }>("/api/nexai/discovery", "POST", criteria);
       mergeCandidates(res.candidates);
+      emitAgent("completed", `Found ${res.candidates.length} companies`, { simulated: true });
     } catch (e) {
       setRunError((e as Error).message);
+      emitAgent("error", "Discovery failed");
     } finally {
       setRunning(false);
     }
@@ -190,12 +194,14 @@ export default function DiscoveryPage() {
         },
       );
       setSaveResult(res);
+      emitAgent("completed", `Saved ${res.createdCount} prospect${res.createdCount === 1 ? "" : "s"}`, { simulated: true });
       // Remove saved ones from the list, refresh existing domains.
       const savedKeys = new Set(toSave.map((c) => c.key));
       setCandidates((prev) => prev.filter((c) => !savedKeys.has(c.key)));
       existing.reload();
     } catch (e) {
       setSaveError((e as Error).message);
+      emitAgent("error", "Save failed");
     } finally {
       setSaving(false);
     }

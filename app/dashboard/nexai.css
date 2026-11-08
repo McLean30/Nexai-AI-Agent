@@ -257,3 +257,147 @@
   .nx-overlay { padding: 10px; align-items: flex-start; padding-top: 40px; }
   .nx-stat-value { font-size: 26px; }
 }
+
+/* ───────────────────────── Nexai agent character ───────────────────────── */
+.nx-agent-wrap {
+  position: fixed; right: 20px; bottom: 20px; z-index: 36;
+  display: flex; align-items: flex-end; gap: 10px; pointer-events: none;
+}
+.nx-agent-wrap > * { pointer-events: auto; }
+
+/* label chip */
+.nx-agent-chip {
+  max-width: 200px; background: linear-gradient(180deg, var(--nx-surface), var(--nx-bg-2));
+  border: 1px solid var(--nx-border); border-radius: 12px; padding: 8px 11px;
+  box-shadow: 0 10px 30px -14px rgba(0,0,0,0.8); margin-bottom: 8px;
+  display: flex; flex-direction: column; gap: 3px;
+  animation: nx-chip-in 0.25s ease both;
+}
+@keyframes nx-chip-in { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: none; } }
+.nx-agent-chip-label { font-size: 12px; font-weight: 600; color: var(--nx-text); line-height: 1.25; }
+.nx-agent-chip-sub { font-size: 10px; color: var(--nx-muted); }
+.nx-agent-chip-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+
+/* character */
+.nx-agent {
+  width: 74px; height: 74px; position: relative; cursor: pointer;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 42%, rgba(56,189,248,0.18), rgba(5,8,16,0.9) 68%);
+  border: 1px solid rgba(56,189,248,0.3);
+  box-shadow: 0 0 22px -6px rgba(56,189,248,0.5), inset 0 0 18px rgba(8,14,26,0.9);
+  display: grid; place-items: center;
+}
+.nx-agent-svg { width: 62px; height: 62px; overflow: visible; display: block; }
+
+/* idle float of the whole body */
+.nx-agent .nx-body { animation: nx-float 4.2s ease-in-out infinite; transform-origin: 50% 60%; }
+@keyframes nx-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+
+/* tail sway */
+.nx-agent .nx-tail { animation: nx-sway 5s ease-in-out infinite; transform-origin: 50% 70%; }
+@keyframes nx-sway { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+
+/* eyes: blink + look-around */
+.nx-agent .nx-eyes { transform-origin: 50% 46%; animation: nx-blink 5s infinite; }
+@keyframes nx-blink { 0%,92%,100% { transform: scaleY(1); } 95% { transform: scaleY(0.12); } }
+.nx-agent .nx-pupils { animation: nx-look 7s ease-in-out infinite; }
+@keyframes nx-look { 0%,40%,100% { transform: translateX(0); } 55% { transform: translateX(2.4px); } 75% { transform: translateX(-2.4px); } }
+
+/* eye colour driven per state */
+.nx-agent { --eye: #38bdf8; }
+.nx-agent .nx-eye-glow { fill: var(--eye); filter: drop-shadow(0 0 3px var(--eye)); }
+.nx-agent .nx-pupil { fill: #eaf6ff; }
+.nx-agent .nx-stinger { fill: var(--eye); filter: drop-shadow(0 0 4px var(--eye)); }
+.nx-agent .nx-visor { stroke: var(--eye); }
+
+/* ---- states ---- */
+.nx-agent[data-state="awake"] { --eye: #7dd3fc; }
+.nx-agent[data-state="awake"] .nx-eyes { animation: none; transform: scaleY(1.08); }
+
+.nx-agent[data-state="researching"] { --eye: #38bdf8; }
+.nx-agent[data-state="researching"] .nx-eyes { animation: none; }
+.nx-agent[data-state="researching"] .nx-pupils { animation: nx-scan 1.1s ease-in-out infinite; }
+@keyframes nx-scan { 0%,100% { transform: translateX(-3px); } 50% { transform: translateX(3px); } }
+
+.nx-agent[data-state="enriching"] { --eye: #22d3ee; }
+.nx-agent[data-state="enriching"] .nx-eyes { animation: none; transform: scaleY(0.8); }
+.nx-agent[data-state="enriching"] .nx-pupils { animation: nx-inspect 2.2s ease-in-out infinite; }
+@keyframes nx-inspect { 0%,100% { transform: translate(0,0); } 25% { transform: translate(-1.5px,1px); } 50% { transform: translate(1.5px,1px); } 75% { transform: translate(0,-1px); } }
+
+.nx-agent[data-state="writing"] { --eye: #818cf8; }
+.nx-agent[data-state="writing"] .nx-eyes { animation: none; }
+.nx-agent[data-state="writing"] .nx-pupils { animation: nx-think 2.4s ease-in-out infinite; }
+@keyframes nx-think { 0%,100% { transform: translate(0,0); } 40% { transform: translate(1px,-2px); } }
+.nx-agent[data-state="writing"] .nx-body { animation: nx-float 4.2s ease-in-out infinite, nx-nod 2.4s ease-in-out infinite; }
+@keyframes nx-nod { 0%,100% { } 50% { } }
+
+.nx-agent[data-state="completed"] { --eye: #34d399; }
+.nx-agent[data-state="completed"] .nx-eyes { animation: none; }
+.nx-agent[data-state="completed"] .nx-body { animation: nx-pop 0.6s ease; }
+@keyframes nx-pop { 0% { transform: scale(1); } 35% { transform: scale(1.14); } 100% { transform: scale(1); } }
+.nx-agent[data-state="completed"] .nx-spark { opacity: 1; animation: nx-spark 0.9s ease; }
+@keyframes nx-spark { 0% { opacity: 0; transform: scale(0.4); } 40% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5); } }
+
+.nx-agent[data-state="error"], .nx-agent[data-state="review"] { --eye: #fbbf24; }
+.nx-agent[data-state="error"] { --eye: #f87171; }
+.nx-agent[data-state="error"] .nx-eyes, .nx-agent[data-state="review"] .nx-eyes { animation: none; }
+.nx-agent[data-state="error"] .nx-body, .nx-agent[data-state="review"] .nx-body { animation: nx-float 4.2s ease-in-out infinite, nx-shake 0.5s ease-in-out 2; }
+@keyframes nx-shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+.nx-agent[data-state="error"] .nx-badge-mark, .nx-agent[data-state="review"] .nx-badge-mark { opacity: 1; }
+
+.nx-agent[data-state="reply"] { --eye: #38bdf8; }
+.nx-agent[data-state="reply"] .nx-eyes { animation: nx-blink 2s infinite; }
+.nx-agent[data-state="reply"] .nx-body { animation: nx-bounce 0.9s ease-in-out infinite; }
+@keyframes nx-bounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
+.nx-agent[data-state="reply"] .nx-mail { opacity: 1; animation: nx-mail-pulse 1.4s ease-in-out infinite; }
+@keyframes nx-mail-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+
+/* ring pulse for alert states */
+.nx-agent[data-state="reply"], .nx-agent[data-state="error"], .nx-agent[data-state="review"] {
+  animation: nx-ring 1.6s ease-in-out infinite;
+}
+@keyframes nx-ring {
+  0%,100% { box-shadow: 0 0 22px -6px var(--eye), inset 0 0 18px rgba(8,14,26,0.9); }
+  50% { box-shadow: 0 0 30px -2px var(--eye), inset 0 0 18px rgba(8,14,26,0.9); }
+}
+
+/* hidden overlays by default */
+.nx-agent .nx-spark, .nx-agent .nx-mail, .nx-agent .nx-badge-mark { opacity: 0; }
+
+/* minimised */
+.nx-agent.min { width: 46px; height: 46px; }
+.nx-agent.min .nx-agent-svg { width: 36px; height: 36px; }
+
+/* controls */
+.nx-agent-ctrls { position: absolute; top: -8px; right: -8px; display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+.nx-agent:hover .nx-agent-ctrls, .nx-agent-wrap:hover .nx-agent-ctrls { opacity: 1; }
+.nx-agent-ctrl {
+  width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--nx-border);
+  background: var(--nx-surface); color: var(--nx-text-dim); display: grid; place-items: center;
+  font-size: 11px; cursor: pointer; line-height: 1;
+}
+.nx-agent-ctrl:hover { color: #fff; border-color: var(--nx-accent); }
+
+/* launcher when hidden */
+.nx-agent-launcher {
+  position: fixed; right: 18px; bottom: 18px; z-index: 36; width: 40px; height: 40px;
+  border-radius: 50%; border: 1px solid rgba(56,189,248,0.3); background: var(--nx-surface);
+  display: grid; place-items: center; cursor: pointer; box-shadow: 0 0 18px -6px rgba(56,189,248,0.5);
+}
+.nx-agent-launcher img { width: 26px; height: 26px; object-fit: contain; }
+
+@media (max-width: 560px) {
+  .nx-agent-wrap { right: 12px; bottom: 12px; }
+  .nx-agent { width: 60px; height: 60px; }
+  .nx-agent-svg { width: 50px; height: 50px; }
+  .nx-agent-chip { max-width: 150px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-agent .nx-body, .nx-agent .nx-eyes, .nx-agent .nx-pupils, .nx-agent .nx-tail,
+  .nx-agent[data-state] .nx-body, .nx-agent[data-state] .nx-pupils, .nx-agent[data-state] .nx-eyes,
+  .nx-agent[data-state="reply"], .nx-agent[data-state="error"], .nx-agent[data-state="review"] {
+    animation: none !important;
+  }
+  .nx-agent-chip { animation: none; }
+}

@@ -16,6 +16,7 @@ import {
   SimBadge,
 } from "../../_components/primitives";
 import { relativeTime, dateTime } from "../../_components/format";
+import { emitAgent } from "../../_components/agent-bus";
 import {
   QUALIFICATION_LABELS,
   QUALIFICATION_STATUSES,
@@ -83,12 +84,16 @@ export default function ProspectDetailPage() {
   const runResearch = async () => {
     setBusy("research");
     setNotice(null);
+    emitAgent("researching", `Researching ${p.companyName}`, { simulated: true });
     try {
       const res = await apiSend<{ provider: { mode: string } }>(`/api/nexai/prospects/${id}/research`, "POST");
-      setNotice(res.provider.mode === "mock" ? "Generated a simulated research report (no live research credentials)." : "Live research report generated.");
+      const sim = res.provider.mode === "mock";
+      setNotice(sim ? "Generated a simulated research report (no live research credentials)." : "Live research report generated.");
+      emitAgent("completed", "Research ready", { simulated: sim });
       reload();
     } catch (e) {
       setNotice(`Research failed: ${(e as Error).message}`);
+      emitAgent("error", "Research failed");
     } finally {
       setBusy(null);
     }
@@ -97,6 +102,7 @@ export default function ProspectDetailPage() {
   const enrichContacts = async () => {
     setBusy("enrich");
     setNotice(null);
+    emitAgent("enriching", `Enriching ${p.companyName}`, { simulated: true });
     try {
       const res = await apiSend<{ added: number; needsReview: number; result: { outcome: string }; provider: { mode: string } }>(
         `/api/nexai/prospects/${id}/enrich`,
@@ -108,9 +114,12 @@ export default function ProspectDetailPage() {
           ? `Enrichment found no contacts${sim}.`
           : `Enrichment added ${res.added} contact${res.added === 1 ? "" : "s"}${res.needsReview ? ` · ${res.needsReview} need review` : ""}${sim}.`,
       );
+      if (res.needsReview > 0) emitAgent("review", `${res.needsReview} contact${res.needsReview === 1 ? "" : "s"} need review`, { simulated: true });
+      else emitAgent("completed", "Contacts enriched", { simulated: true });
       reload();
     } catch (e) {
       setNotice(`Enrichment failed: ${(e as Error).message}`);
+      emitAgent("error", "Enrichment failed");
     } finally {
       setBusy(null);
     }
@@ -119,10 +128,12 @@ export default function ProspectDetailPage() {
   const generateDraft = async (force = false) => {
     setBusy("draft");
     setNotice(null);
+    emitAgent("writing", `Writing to ${p.companyName}`, { simulated: true });
     try {
       const res = await apiSend<{ draft: { simulated: boolean } }>(`/api/nexai/prospects/${id}/draft`, "POST", { stepType: "initial", force });
       setDraftEdit(null);
       setNotice(res.draft.simulated ? "Generated a simulated email draft (no live AI credentials)." : "Live email draft generated.");
+      emitAgent("completed", "Draft ready", { simulated: res.draft.simulated });
       reload();
     } catch (e) {
       // Overwrite guard — ask for explicit confirmation, never overwrite silently.
@@ -133,8 +144,10 @@ export default function ProspectDetailPage() {
           return;
         }
         setNotice("Regeneration cancelled — your saved draft is unchanged.");
+        emitAgent("idle");
       } else {
         setNotice(`Draft failed: ${msg}`);
+        emitAgent("error", "Draft failed");
       }
     } finally {
       setBusy(null);
