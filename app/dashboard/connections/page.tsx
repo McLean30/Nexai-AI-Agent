@@ -74,7 +74,7 @@ interface StorageStatus {
 }
 
 export default function ConnectionsPage() {
-  const { data, loading, error, reload } = useApi<{ providers: ProviderStatus[]; settings: Settings; storage: StorageStatus }>("/api/nexai/connections");
+  const { data, loading, error, reload } = useApi<{ providers: ProviderStatus[]; settings: Settings; storage: StorageStatus; catalogue: { status: string } }>("/api/nexai/connections");
   const [settings, setSettings] = useState<Settings | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -134,7 +134,7 @@ export default function ConnectionsPage() {
       </Card>
 
       <div className="nx-label" style={{ marginBottom: 10 }}>Providers</div>
-      <div className="nx-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", marginBottom: 24 }}>
+      <div className="nx-grid cols-2" style={{ marginBottom: 24 }}>
         {data.providers.map((p) => <ProviderCard key={p.id} p={p} />)}
       </div>
 
@@ -158,6 +158,15 @@ export default function ConnectionsPage() {
             <span className="nx-toggle-knob" />
           </div>
         </div>
+        <div className="nx-row" style={{ gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+          <span className={`nx-badge ${data.catalogue?.status === "approved" ? "nx-badge-green" : "nx-badge-amber"}`}>
+            Catalogue {data.catalogue?.status ?? "provisional"}
+          </span>
+          <span className="nx-muted" style={{ fontSize: 11.5 }}>
+            Live sending also requires an <strong>approved</strong> service catalogue and a draft whose offers it supports.
+            {data.catalogue?.status !== "approved" && " Approve it on the Service Catalogue screen."}
+          </span>
+        </div>
         {settings.sendingEnabled && (
           <div className="nx-badge nx-badge-amber" style={{ marginTop: 12 }}>
             Sending is ON — keep this off during development.
@@ -166,7 +175,7 @@ export default function ConnectionsPage() {
       </Card>
 
       <Card style={{ marginBottom: 16 }}>
-        <div className="nx-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+        <div className="nx-grid cols-2" >
           <div className="nx-field">
             <label className="nx-label">New prospects / working day</label>
             <input className="nx-input" type="number" min={0} value={settings.dailyProspectTarget} onChange={(e) => update({ dailyProspectTarget: Number(e.target.value) })} />

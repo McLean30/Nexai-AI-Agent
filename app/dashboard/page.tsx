@@ -51,7 +51,7 @@ export default function OverviewPage() {
         <StatTile label="Calls booked" value={m.bookedCalls} meta={`${m.qualified} qualified`} />
       </div>
 
-      <div className="nx-grid" style={{ gridTemplateColumns: "1.4fr 1fr" }}>
+      <div className="nx-grid split" >
         <Card>
           <div className="nx-spread" style={{ marginBottom: 14 }}>
             <strong>Pipeline by stage</strong>

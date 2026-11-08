@@ -2,9 +2,11 @@ import type {
   DecisionMaker,
   DiscoveryCandidate,
   EmailMessage,
+  OfferCheck,
   Prospect,
   ProviderKind,
   ResearchReport,
+  ServiceCatalogue,
   TargetingCriteria,
 } from "../types";
 
@@ -53,8 +55,9 @@ export interface DiscoveryProvider {
 
 export interface ResearchProvider {
   status(): ProviderStatus;
-  /** Produce a company research report for a prospect. */
-  research(prospect: Prospect): Promise<ResearchReport>;
+  /** Produce a company research report. Recommendations are drawn from the
+   *  approved/provisional service catalogue when provided. */
+  research(prospect: Prospect, catalogue?: ServiceCatalogue): Promise<ResearchReport>;
 }
 
 export interface EnrichmentProvider {
@@ -65,11 +68,13 @@ export interface EnrichmentProvider {
 
 export interface AiWritingProvider {
   status(): ProviderStatus;
-  /** Draft a personalised outreach email for a prospect + decision maker. */
+  /** Draft a personalised outreach email for a prospect + decision maker.
+   *  The offer is built from the catalogue's offered services when provided. */
   draftEmail(input: {
     prospect: Prospect;
     decisionMaker?: DecisionMaker;
     stepType?: EmailMessage["stepType"];
+    catalogue?: ServiceCatalogue;
   }): Promise<{ subject: string; body: string }>;
 }
 
@@ -82,11 +87,15 @@ export interface EmailSendResult {
 
 export interface EmailProvider {
   status(): ProviderStatus;
-  /** Send (or simulate sending) an email. Honours the sending-enabled flag. */
+  /** Send (or simulate sending) an email. Honours the sending-enabled flag,
+   *  and — before live sending — requires an approved catalogue and a draft
+   *  whose offers the catalogue supports. */
   send(input: {
     to: string;
     subject: string;
     body: string;
     sendingEnabled: boolean;
+    catalogue?: ServiceCatalogue;
+    offerCheck?: OfferCheck;
   }): Promise<EmailSendResult>;
 }

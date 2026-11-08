@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       };
 
       if (generateResearch) {
-        const report = await researchProvider.research(prospect);
+        const report = await researchProvider.research(prospect, store.catalogue);
         prospect.research = report;
         prospect.qualification = "researching";
       }

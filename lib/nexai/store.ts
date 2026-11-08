@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import { QUALIFICATION_STATUSES } from "./types";
 import { buildSeedData, DEFAULT_SETTINGS } from "./seed";
+import { DEFAULT_CATALOGUE } from "./catalogue";
 import { getStorage } from "./storage";
 
 // Store access layer. Persistence is delegated to a pluggable StorageAdapter
@@ -25,8 +26,9 @@ export async function readStore(): Promise<StoreData> {
     data = buildSeedData();
     await storage.save(data);
   }
-  // Backfill settings defaults if an older store is loaded.
+  // Backfill defaults if an older store is loaded.
   data.settings = { ...DEFAULT_SETTINGS, ...(data.settings ?? {}) };
+  if (!data.catalogue) data.catalogue = { ...DEFAULT_CATALOGUE };
   return data;
 }
 

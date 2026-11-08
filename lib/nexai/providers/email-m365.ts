@@ -51,6 +51,16 @@ export const emailProvider: EmailProvider = {
       };
     }
 
+    // Catalogue gate: an approved catalogue and a supported offer are required
+    // before any live send.
+    if (input.catalogue) {
+      const { canSendDraft } = await import("../catalogue");
+      const gate = canSendDraft({ offerCheck: input.offerCheck }, input.catalogue);
+      if (!gate.ok) {
+        return { accepted: false, simulated: true, reason: gate.reason };
+      }
+    }
+
     if (!connected) {
       return {
         accepted: false,

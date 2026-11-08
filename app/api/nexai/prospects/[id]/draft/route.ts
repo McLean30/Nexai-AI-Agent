@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { logActivity, mutateStore, newId } from "@/lib/nexai/store";
+import { logActivity, mutateStore, newId, readStore } from "@/lib/nexai/store";
 import { aiWritingProvider } from "@/lib/nexai/providers";
+import { validateOffer } from "@/lib/nexai/catalogue";
 import type { EmailMessage } from "@/lib/nexai/types";
 
 export const runtime = "nodejs";
@@ -40,7 +41,13 @@ export async function POST(request: NextRequest, { params }: Ctx) {
     prospect.decisionMakers.find((d) => d.reviewStatus !== "needs_review") ??
     prospect.decisionMakers[0];
 
-  const { subject, body: draftBody } = await aiWritingProvider.draftEmail({ prospect, decisionMaker, stepType });
+  const store0 = await readStore();
+  const { subject, body: draftBody } = await aiWritingProvider.draftEmail({
+    prospect,
+    decisionMaker,
+    stepType,
+    catalogue: store0.catalogue,
+  });
   const providerStatus = aiWritingProvider.status();
 
   const nowIso = new Date().toISOString();
@@ -58,6 +65,8 @@ export async function POST(request: NextRequest, { params }: Ctx) {
     approved: false,
     createdAt: nowIso,
     updatedAt: nowIso,
+    // Validate the generated offer against the catalogue.
+    offerCheck: validateOffer({ subject, body: draftBody }, store0.catalogue),
   };
 
   const saved = await mutateStore(async (store) => {
@@ -93,6 +102,8 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     if (typeof body.body === "string") d.body = body.body;
     if (typeof body.subject === "string" || typeof body.body === "string") {
       d.edited = true;
+      // Re-validate the edited offer against the catalogue.
+      d.offerCheck = validateOffer({ subject: d.subject, body: d.body }, store.catalogue);
     }
     if (body.approved === true) d.approved = true;
     if (body.approved === false) d.approved = false;

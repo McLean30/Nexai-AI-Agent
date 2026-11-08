@@ -43,16 +43,26 @@ function factValue(report: ResearchReport | undefined, label: string): string | 
   return report?.facts?.find((f) => f.label.toLowerCase() === label.toLowerCase())?.value;
 }
 
-const NEXAI_OFFER =
+const FALLBACK_OFFER =
   "We build custom software for trade & field-service businesses — things like job scheduling and dispatch, quote-to-invoice automation, and field-engineer mobile apps.";
+
+function offerFromCatalogue(catalogue?: import("../types").ServiceCatalogue): string {
+  // Build the offer ONLY from approved/offered services — never excluded ones.
+  const names = (catalogue?.offeredServices ?? []).slice(0, 3).map((s) => s.name.toLowerCase());
+  if (names.length === 0) return FALLBACK_OFFER;
+  const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0];
+  return `We build custom software for trade & field-service businesses — things like ${list}.`;
+}
 
 function mockDraft(input: {
   prospect: Prospect;
   decisionMaker?: DecisionMaker;
   stepType?: EmailMessage["stepType"];
+  catalogue?: import("../types").ServiceCatalogue;
 }): { subject: string; body: string } {
   const { prospect, decisionMaker } = input;
   const step = input.stepType ?? "initial";
+  const NEXAI_OFFER = offerFromCatalogue(input.catalogue);
   const name = firstName(decisionMaker?.name);
   const report = prospect.research;
 
@@ -104,4 +114,5 @@ export const aiWritingProvider: AiWritingProvider = {
     // LIVE generation would go here when OPENAI_API_KEY is configured.
     return mockDraft(input);
   },
+
 };

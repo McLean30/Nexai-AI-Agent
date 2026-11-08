@@ -178,6 +178,8 @@ export interface EmailMessage {
   // True once the draft has been approved for sending.
   approved?: boolean;
   updatedAt?: ISODate;
+  // Result of validating the draft's offers against the service catalogue.
+  offerCheck?: OfferCheck;
 }
 
 export interface Prospect {
@@ -260,6 +262,7 @@ export interface StoreData {
   conversations: Conversation[];
   activity: ActivityEvent[];
   settings: Settings;
+  catalogue: ServiceCatalogue;
 }
 
 export interface OverviewMetrics {
@@ -334,3 +337,48 @@ export const TRADE_SECTORS: string[] = [
   "Building & Construction",
   "Field Service",
 ];
+
+// ─────────────────────────────────────────────────────────────
+// Nexai service catalogue
+// ─────────────────────────────────────────────────────────────
+
+export interface CatalogueOffering {
+  id: string;
+  name: string;
+  description?: string;
+  keywords: string[]; // used to match offers in draft text
+}
+
+export interface CatalogueExclusion {
+  id: string;
+  name: string;
+  reason?: string;
+  keywords: string[]; // mentions of these flag a draft as unsupported
+}
+
+export type CatalogueStatus = "provisional" | "approved";
+
+/** The single source of truth for what Nexai offers and may claim.
+ *  Research recommendations and email generation draw from this; before live
+ *  sending, the catalogue must be approved and a draft's offers supported. */
+export interface ServiceCatalogue {
+  status: CatalogueStatus;
+  provisionalNote?: string;
+  updatedAt: ISODate;
+  offeredServices: CatalogueOffering[];
+  excludedServices: CatalogueExclusion[];
+  approvedClaims: string[]; // claims safe to make in outreach
+  reviewItems: string[]; // claims/specifics requiring owner sign-off
+}
+
+/** Result of checking a draft's offers against the catalogue. */
+export type OfferCheckStatus = "supported" | "review" | "unsupported";
+
+export interface OfferCheck {
+  status: OfferCheckStatus;
+  checkedAt: ISODate;
+  catalogueStatus: CatalogueStatus;
+  unsupported: string[]; // excluded services the draft appears to offer
+  ambiguous: string[]; // review-item topics mentioned, or catalogue provisional
+  matchedOfferings: string[]; // offered services the draft references
+}

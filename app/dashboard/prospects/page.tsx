@@ -49,7 +49,7 @@ function AddProspectModal({ onClose, onCreated }: { onClose: () => void; onCreat
             <label className="nx-label">Domain *</label>
             <input className="nx-input" value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} placeholder="acme.com" />
           </div>
-          <div className="nx-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+          <div className="nx-grid cols-2" >
             <div className="nx-field">
               <label className="nx-label">Industry</label>
               <input className="nx-input" value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} placeholder="SaaS" />
@@ -146,11 +146,11 @@ function ProspectsInner() {
               <tr>
                 <th>Company</th>
                 <th>Stage</th>
-                <th>Fit</th>
-                <th>Industry</th>
+                <th className="nx-hide-sm">Fit</th>
+                <th className="nx-hide-sm">Industry</th>
                 <th>Contacts</th>
-                <th>Record</th>
-                <th>Updated</th>
+                <th className="nx-hide-sm">Record</th>
+                <th className="nx-hide-sm">Updated</th>
               </tr>
             </thead>
             <tbody>
@@ -164,8 +164,8 @@ function ProspectsInner() {
                       <div className="nx-domain">{p.domain}</div>
                     </td>
                     <td><StatusPill status={p.qualification as QualificationStatus} /></td>
-                    <td><ScoreBar score={p.fitScore} /></td>
-                    <td className="nx-dim">{p.industry ?? "—"}</td>
+                    <td className="nx-hide-sm"><ScoreBar score={p.fitScore} /></td>
+                    <td className="nx-hide-sm nx-dim">{p.industry ?? "—"}</td>
                     <td>
                       {best ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -179,8 +179,8 @@ function ProspectsInner() {
                         <span className="nx-muted">None</span>
                       )}
                     </td>
-                    <td><OriginBadge origin={p.origin} /></td>
-                    <td className="nx-muted" style={{ fontSize: 12 }}>{relativeTime(p.updatedAt)}</td>
+                    <td className="nx-hide-sm"><OriginBadge origin={p.origin} /></td>
+                    <td className="nx-hide-sm nx-muted" style={{ fontSize: 12 }}>{relativeTime(p.updatedAt)}</td>
                   </tr>
                 );
               })}

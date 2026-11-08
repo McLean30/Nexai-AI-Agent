@@ -45,7 +45,7 @@ export default function ConversationsPage() {
       {data.conversations.length === 0 ? (
         <Card><EmptyState title="No conversations yet" hint="Once prospects reply, their threads appear here." /></Card>
       ) : (
-        <div className="nx-grid" style={{ gridTemplateColumns: "340px 1fr", alignItems: "start" }}>
+        <div className="nx-grid convo" style={{ alignItems: "start" }}>
           <div className="nx-grid" style={{ gap: 10 }}>
             {data.conversations.map((c) => (
               <Card

@@ -11,5 +11,6 @@ export async function GET() {
     providers: allProviderStatuses(),
     settings: data.settings,
     storage: storageStatus(),
+    catalogue: { status: data.catalogue.status, updatedAt: data.catalogue.updatedAt },
   });
 }

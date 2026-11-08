@@ -53,7 +53,7 @@ export default function CampaignPage() {
       ) : (
         <>
           {/* config */}
-          <div className="nx-stats" style={{ marginBottom: 16, gridTemplateColumns: "repeat(4,1fr)" }}>
+          <div className="nx-stats" style={{ marginBottom: 16 }}>
             <Card className="nx-stat">
               <div className="nx-stat-label">Daily new prospects</div>
               <div className="nx-stat-value nx-stat-accent">{s.dailyProspectTarget}</div>

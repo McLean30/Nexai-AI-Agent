@@ -211,9 +211,23 @@
 /* topbar (mobile) */
 .nx-topbar { display: none; }
 
+/* responsive grid modifiers — reflow to a single column on small screens.
+   Use these instead of inline grid-template-columns so media queries win. */
+.nx-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.nx-grid.cols-2w { grid-template-columns: 2fr 1fr; }
+.nx-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.nx-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.nx-grid.split { grid-template-columns: 1.4fr 1fr; }
+.nx-grid.split-detail { grid-template-columns: 1.3fr 1fr; }
+.nx-grid.convo { grid-template-columns: 340px 1fr; }
+
+/* hide on phones (secondary table columns) */
+.nx-hide-sm { display: table-cell; }
+
 /* responsive */
 @media (max-width: 1024px) {
-  .nx-stats { grid-template-columns: repeat(2, 1fr); }
+  .nx-stats, .nx-grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
+  .nx-grid.cols-3 { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 860px) {
   .nx-sidebar { position: fixed; z-index: 40; transform: translateX(-100%); transition: transform 0.2s ease; box-shadow: 0 0 60px rgba(0,0,0,0.6); }
@@ -221,7 +235,25 @@
   .nx-topbar { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--nx-border); position: sticky; top: 0; background: var(--nx-bg); z-index: 30; }
   .nx-content { padding: 18px 16px 50px; }
   .nx-demo-banner { padding: 9px 16px; }
+  /* Stack every multi-column grid */
+  .nx-grid.cols-2, .nx-grid.cols-2w, .nx-grid.cols-3, .nx-grid.split, .nx-grid.split-detail, .nx-grid.convo { grid-template-columns: 1fr; }
+  .nx-page-head { gap: 10px; }
+  .nx-h1 { font-size: 20px; }
 }
 @media (max-width: 560px) {
-  .nx-stats { grid-template-columns: 1fr; }
+  .nx-stats, .nx-grid.cols-4 { grid-template-columns: 1fr; }
+  /* Larger tap targets + 16px inputs (prevents iOS zoom-on-focus) */
+  .nx-btn { padding: 10px 14px; }
+  .nx-btn-sm { padding: 8px 12px; font-size: 12.5px; }
+  .nx-input, .nx-select, .nx-textarea { font-size: 16px; padding: 11px 12px; }
+  .nx-toggle { width: 48px; height: 27px; }
+  .nx-toggle-knob { width: 21px; height: 21px; }
+  .nx-toggle.on .nx-toggle-knob { transform: translateX(21px); }
+  /* Tables: tighter padding + hide secondary columns, smaller min-width */
+  .nx-table { min-width: 0; font-size: 12.5px; }
+  .nx-table thead th, .nx-table tbody td { padding: 10px 10px; }
+  .nx-hide-sm { display: none; }
+  .nx-modal-body, .nx-modal-head, .nx-modal-foot { padding-left: 16px; padding-right: 16px; }
+  .nx-overlay { padding: 10px; align-items: flex-start; padding-top: 40px; }
+  .nx-stat-value { font-size: 26px; }
 }

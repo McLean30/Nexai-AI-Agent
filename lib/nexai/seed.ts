@@ -1,3 +1,4 @@
+import { DEFAULT_CATALOGUE } from "./catalogue";
 import type {
   ActivityEvent,
   Campaign,
@@ -577,5 +578,6 @@ export function buildSeedData(): StoreData {
     conversations,
     activity,
     settings: { ...DEFAULT_SETTINGS },
+    catalogue: { ...DEFAULT_CATALOGUE },
   };
 }

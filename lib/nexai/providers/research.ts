@@ -83,7 +83,17 @@ function appIdeasFor(sector: string): import("../types").CustomAppIdea[] {
   return extra ? [extra, ...generic.slice(0, 2)] : generic;
 }
 
-function mockResearch(prospect: Prospect): ResearchReport {
+function ideasFromCatalogue(catalogue: import("../types").ServiceCatalogue): import("../types").CustomAppIdea[] {
+  // Recommendations drawn ONLY from catalogue offered services.
+  return catalogue.offeredServices.slice(0, 3).map((s) => ({
+    title: s.name,
+    problem: "Likely handled manually today (spreadsheets / paper / phone).",
+    idea: s.description ?? `A custom ${s.name.toLowerCase()} tailored to their workflow.`,
+    value: "Less admin and fewer things falling through the cracks.",
+  }));
+}
+
+function mockResearch(prospect: Prospect, catalogue?: import("../types").ServiceCatalogue): ResearchReport {
   const sector = prospect.industry ?? "Trade / Field Service";
   const staff = prospect.employeeRange ?? "11-50";
   const location = prospect.location ?? "United Kingdom";
@@ -131,7 +141,7 @@ function mockResearch(prospect: Prospect): ResearchReport {
       "Where do things most often fall through the cracks day to day?",
       "What does the office team spend the most time re-keying?",
     ],
-    customAppIdeas: appIdeasFor(sector),
+    customAppIdeas: catalogue ? ideasFromCatalogue(catalogue) : appIdeasFor(sector),
 
     // Sources are illustrative placeholders — explicitly NOT real/verified.
     sourcesSimulated: true,
@@ -144,10 +154,10 @@ function mockResearch(prospect: Prospect): ResearchReport {
 
 export const researchProvider: ResearchProvider = {
   status,
-  async research(prospect: Prospect): Promise<ResearchReport> {
+  async research(prospect: Prospect, catalogue?): Promise<ResearchReport> {
     if (!hasAllEnv(REQUIRED)) {
       // Deterministic mock — fast, safe, clearly simulated.
-      return mockResearch(prospect);
+      return mockResearch(prospect, catalogue);
     }
     // LIVE path: delegate to the existing Fire Enrich pipeline. Imported lazily
     // so the heavy dependency only loads when credentials exist.

@@ -242,7 +242,7 @@ export default function DiscoveryPage() {
           ))}
         </div>
 
-        <div className="nx-grid" style={{ gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+        <div className="nx-grid cols-3" style={{ gap: 12 }}>
           <div className="nx-field">
             <label className="nx-label">Location</label>
             <input className="nx-input" value={criteria.location} onChange={(e) => setCriteria({ ...criteria, location: e.target.value })} />
@@ -271,7 +271,7 @@ export default function DiscoveryPage() {
           ))}
         </div>
 
-        <div className="nx-grid" style={{ gridTemplateColumns: "2fr 1fr", gap: 12 }}>
+        <div className="nx-grid cols-2w" style={{ gap: 12 }}>
           <div className="nx-field" style={{ marginBottom: 0 }}>
             <label className="nx-label">Keywords (optional)</label>
             <input className="nx-input" placeholder="e.g. commercial, maintenance contracts" value={criteria.keywords} onChange={(e) => setCriteria({ ...criteria, keywords: e.target.value })} />
@@ -292,7 +292,7 @@ export default function DiscoveryPage() {
       </Card>
 
       {/* Manual + CSV */}
-      <div className="nx-grid" style={{ gridTemplateColumns: "1fr 1fr", marginBottom: 16 }}>
+      <div className="nx-grid cols-2" style={{ marginBottom: 16 }}>
         <Card>
           <strong style={{ fontSize: 14 }}>Add a company manually</strong>
           <div className="nx-field" style={{ marginTop: 10 }}>
@@ -378,9 +378,9 @@ export default function DiscoveryPage() {
                   <tr>
                     <th style={{ width: 36 }}></th>
                     <th>Company</th>
-                    <th>Sector</th>
-                    <th>Size</th>
-                    <th>Why</th>
+                    <th className="nx-hide-sm">Sector</th>
+                    <th className="nx-hide-sm">Size</th>
+                    <th className="nx-hide-sm">Why</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -397,9 +397,9 @@ export default function DiscoveryPage() {
                           <div className="nx-company">{c.companyName}</div>
                           <div className="nx-domain">{c.domain}</div>
                         </td>
-                        <td className="nx-dim">{c.sector ?? "—"}</td>
-                        <td className="nx-dim">{c.employeeRange ?? "—"}</td>
-                        <td className="nx-dim" style={{ fontSize: 12, maxWidth: 320 }}>{c.rationale}</td>
+                        <td className="nx-hide-sm nx-dim">{c.sector ?? "—"}</td>
+                        <td className="nx-hide-sm nx-dim">{c.employeeRange ?? "—"}</td>
+                        <td className="nx-hide-sm nx-dim" style={{ fontSize: 12, maxWidth: 320 }}>{c.rationale}</td>
                         <td>
                           {dup ? (
                             <Link href={`/dashboard/prospects/${dup}`} className="nx-badge nx-badge-gray">Already a prospect</Link>

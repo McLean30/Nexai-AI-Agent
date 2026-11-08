@@ -19,6 +19,7 @@ import { relativeTime, dateTime } from "../../_components/format";
 import {
   QUALIFICATION_LABELS,
   QUALIFICATION_STATUSES,
+  type OfferCheck,
   type Prospect,
   type QualificationStatus,
   type Source,
@@ -284,7 +285,7 @@ export default function ProspectDetailPage() {
         )}
       </Card>
 
-      <div className="nx-grid" style={{ gridTemplateColumns: "1.3fr 1fr" }}>
+      <div className="nx-grid split-detail" >
         {/* research report */}
         <Card>
           <div className="nx-spread" style={{ marginBottom: 12 }}>
@@ -311,14 +312,14 @@ export default function ProspectDetailPage() {
                 <>
                   <hr className="nx-divider" />
                   <div className="nx-label">Company facts</div>
-                  <div className="nx-grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div className="nx-grid cols-2" style={{ gap: 10 }}>
                     {p.research.facts.map((f, i) => <Field key={i} label={f.label} value={f.value} />)}
                   </div>
                 </>
               ) : (
                 <>
                   <hr className="nx-divider" />
-                  <div className="nx-grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div className="nx-grid cols-2" style={{ gap: 10 }}>
                     <Field label="Industry" value={p.research.industry} />
                     <Field label="Employees" value={p.research.employeeRange} />
                     <Field label="Revenue" value={p.research.revenueRange} />
@@ -515,6 +516,9 @@ export default function ProspectDetailPage() {
                 <div className="nx-dim" style={{ fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap", background: "var(--nx-bg-2)", border: "1px solid var(--nx-border)", borderRadius: 9, padding: 12 }}>
                   {p.draftEmail.body}
                 </div>
+                {p.draftEmail.offerCheck && (
+                  <OfferCheckBanner check={p.draftEmail.offerCheck} />
+                )}
                 <div className="nx-row" style={{ gap: 8, marginTop: 12, flexWrap: "wrap" }}>
                   <button className="nx-btn nx-btn-sm" onClick={() => setDraftEdit({ subject: p.draftEmail!.subject, body: p.draftEmail!.body })}>Edit</button>
                   {!p.draftEmail.approved && (
@@ -544,7 +548,7 @@ export default function ProspectDetailPage() {
                 <label className="nx-label">Company name</label>
                 <input className="nx-input" value={edit.companyName ?? ""} onChange={(e) => setEdit({ ...edit, companyName: e.target.value })} />
               </div>
-              <div className="nx-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+              <div className="nx-grid cols-2" >
                 <div className="nx-field">
                   <label className="nx-label">Industry</label>
                   <input className="nx-input" value={edit.industry ?? ""} onChange={(e) => setEdit({ ...edit, industry: e.target.value })} />
@@ -554,7 +558,7 @@ export default function ProspectDetailPage() {
                   <input className="nx-input" value={edit.location ?? ""} onChange={(e) => setEdit({ ...edit, location: e.target.value })} />
                 </div>
               </div>
-              <div className="nx-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+              <div className="nx-grid cols-2" >
                 <div className="nx-field">
                   <label className="nx-label">Employee range</label>
                   <input className="nx-input" value={edit.employeeRange ?? ""} onChange={(e) => setEdit({ ...edit, employeeRange: e.target.value })} />
@@ -576,6 +580,37 @@ export default function ProspectDetailPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function OfferCheckBanner({ check }: { check: OfferCheck }) {
+  const cls = check.status === "supported" ? "nx-badge-green" : check.status === "unsupported" ? "nx-badge-red" : "nx-badge-amber";
+  const label = check.status === "supported" ? "Offer supported" : check.status === "unsupported" ? "Unsupported offer" : "Needs review";
+  return (
+    <div style={{ marginTop: 10, background: "var(--nx-bg-2)", border: "1px solid var(--nx-border)", borderRadius: 8, padding: "9px 11px" }}>
+      <div className="nx-row" style={{ gap: 8, flexWrap: "wrap" }}>
+        <span className="nx-label" style={{ margin: 0 }}>Catalogue check</span>
+        <span className={`nx-badge ${cls}`}>{label}</span>
+        {check.matchedOfferings.length > 0 && (
+          <span className="nx-muted" style={{ fontSize: 11 }}>Offers: {check.matchedOfferings.join(", ")}</span>
+        )}
+      </div>
+      {check.unsupported.length > 0 && (
+        <div className="nx-dim" style={{ fontSize: 12, marginTop: 6 }}>
+          <strong style={{ color: "#f5a3a3" }}>Not offered:</strong> {check.unsupported.join(", ")}
+        </div>
+      )}
+      {check.ambiguous.length > 0 && (
+        <div className="nx-dim" style={{ fontSize: 12, marginTop: 4 }}>
+          <strong style={{ color: "#f3cf7a" }}>Review:</strong> {check.ambiguous.join("; ")}
+        </div>
+      )}
+      <div className="nx-muted" style={{ fontSize: 11, marginTop: 6 }}>
+        {check.status === "supported"
+          ? "Offer is backed by the approved catalogue."
+          : "This draft cannot be sent live until the issues above are resolved and the catalogue is approved."}
+      </div>
     </div>
   );
 }
