@@ -401,3 +401,9 @@
   }
   .nx-agent-chip { animation: none; }
 }
+
+/* agent clickable affordances */
+.nx-agent.clickable { cursor: pointer; }
+.nx-agent-chip.clickable { cursor: pointer; transition: border-color 0.15s, transform 0.12s; }
+.nx-agent-chip.clickable:hover { border-color: rgba(56,189,248,0.5); transform: translateX(-2px); }
+.nx-agent-chip-cta { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 600; color: var(--nx-accent); }

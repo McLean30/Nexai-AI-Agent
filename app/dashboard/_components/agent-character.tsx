@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AGENT_EVENT, type AgentSignal, type AgentState } from "./agent-bus";
 
 const LABELS: Record<AgentState, string> = {
@@ -56,6 +57,7 @@ function writeLS(key: string, val: string) {
 }
 
 export default function AgentCharacter() {
+  const router = useRouter();
   const [task, setTask] = useState<AgentSignal | null>(null);
   const [ambient, setAmbient] = useState<AgentSignal | null>(null);
   const [demoMode, setDemoMode] = useState(true);
@@ -103,12 +105,14 @@ export default function AgentCharacter() {
         fetch("/api/nexai/overview").then((r) => r.json()),
       ]);
       setDemoMode(oRes?.metrics?.demoMode ?? true);
-      const notifs: { kind: string; read: boolean }[] = nRes?.notifications ?? [];
+      const notifs: { kind: string; read: boolean; prospectId?: string }[] = nRes?.notifications ?? [];
       const unread = notifs.filter((n) => !n.read);
-      if (unread.some((n) => n.kind === "reply_needs_human")) {
-        setAmbient({ state: "reply", label: LABELS.reply, simulated: true });
-      } else if (unread.some((n) => n.kind === "out_of_office_review")) {
-        setAmbient({ state: "review", label: "Out-of-office — review", simulated: true });
+      const reply = unread.find((n) => n.kind === "reply_needs_human");
+      const ooo = unread.find((n) => n.kind === "out_of_office_review");
+      if (reply) {
+        setAmbient({ state: "reply", label: LABELS.reply, simulated: true, href: `/dashboard/conversations${reply.prospectId ? `?prospect=${reply.prospectId}` : ""}` });
+      } else if (ooo) {
+        setAmbient({ state: "review", label: "Out-of-office — review", simulated: true, href: `/dashboard/conversations${ooo.prospectId ? `?prospect=${ooo.prospectId}` : ""}` });
       } else {
         setAmbient(null);
       }
@@ -151,10 +155,29 @@ export default function AgentCharacter() {
   const sub = SUBS[state];
   const isDemo = signal.simulated ?? (ambient != null && demoMode);
   const dismissable = ALERT_STATES.includes(state) && task != null;
+  const href = signal.href;
+  const navigable = Boolean(href);
+
+  const go = () => {
+    if (href) {
+      router.push(href);
+      // Clear the transient alert after navigating (ambient re-shows if still unhandled).
+      if (task) setTask(null);
+    } else if (dismissable) {
+      setTask(null);
+    }
+  };
 
   return (
     <div className="nx-agent-wrap" aria-live="polite">
-      <div className="nx-agent-chip" role="status">
+      <div
+        className={`nx-agent-chip ${navigable ? "clickable" : ""}`}
+        role={navigable ? "button" : "status"}
+        tabIndex={navigable ? 0 : undefined}
+        onClick={navigable ? go : undefined}
+        onKeyDown={navigable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } } : undefined}
+        title={navigable ? "Click to review" : undefined}
+      >
         <div className="nx-agent-chip-label">
           <span className="nx-agent-chip-dot" style={{ background: DOT[state], boxShadow: `0 0 6px ${DOT[state]}` }} />
           {label}
@@ -162,17 +185,18 @@ export default function AgentCharacter() {
         <div className="nx-agent-chip-sub">
           {sub}
           {isDemo && <span className="nx-badge nx-badge-purple" style={{ marginLeft: 6, padding: "0 6px", fontSize: 9 }}>demo</span>}
+          {navigable && <span className="nx-agent-chip-cta">Review →</span>}
         </div>
       </div>
 
       <div
-        className={`nx-agent ${min ? "min" : ""}`}
+        className={`nx-agent ${min ? "min" : ""} ${navigable ? "clickable" : ""}`}
         data-state={state}
-        role="img"
-        aria-label={`Nexai agent: ${label}`}
-        onClick={() => {
-          if (dismissable) setTask(null);
-        }}
+        role={navigable ? "button" : "img"}
+        tabIndex={navigable ? 0 : undefined}
+        aria-label={navigable ? `Nexai agent: ${label}. Click to review.` : `Nexai agent: ${label}`}
+        onClick={go}
+        onKeyDown={navigable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } } : undefined}
       >
         <AgentSvg />
         <div className="nx-agent-ctrls">

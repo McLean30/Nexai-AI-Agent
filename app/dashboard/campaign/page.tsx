@@ -73,8 +73,8 @@ export default function CampaignPage() {
     setBusy(`sim-${type}`);
     try {
       await apiSend("/api/nexai/mailbox/simulate", "POST", { prospectId, type, body: type === "opt_out" ? "Please unsubscribe me." : type === "out_of_office" ? "Automatic reply: I am out of the office." : "Thanks, tell me more." });
-      if (type === "reply") emitAgent("reply", "Reply received — hand to Kieran", { simulated: true });
-      else if (type === "out_of_office") emitAgent("review", "Out-of-office — review", { simulated: true });
+      if (type === "reply") emitAgent("reply", "Reply received — hand to Kieran", { simulated: true, href: `/dashboard/conversations?prospect=${prospectId}` });
+      else if (type === "out_of_office") emitAgent("review", "Out-of-office — review", { simulated: true, href: `/dashboard/conversations?prospect=${prospectId}` });
       else emitAgent("completed", `${type.replace(/_/g, " ")} handled`, { simulated: true });
       setSimFor(null);
       reload();

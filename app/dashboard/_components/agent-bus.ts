@@ -18,16 +18,22 @@ export interface AgentSignal {
   state: AgentState;
   label?: string;
   simulated?: boolean;
+  /** Where clicking the character should take you, when it needs attention. */
+  href?: string;
 }
 
 export const AGENT_EVENT = "nexai:agent";
 
 /** Publish a task state to the agent character. */
-export function emitAgent(state: AgentState, label?: string, opts?: { simulated?: boolean }) {
+export function emitAgent(
+  state: AgentState,
+  label?: string,
+  opts?: { simulated?: boolean; href?: string },
+) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(
     new CustomEvent<AgentSignal>(AGENT_EVENT, {
-      detail: { state, label, simulated: opts?.simulated },
+      detail: { state, label, simulated: opts?.simulated, href: opts?.href },
     }),
   );
 }

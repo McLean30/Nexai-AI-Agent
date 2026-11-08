@@ -114,7 +114,7 @@ export default function ProspectDetailPage() {
           ? `Enrichment found no contacts${sim}.`
           : `Enrichment added ${res.added} contact${res.added === 1 ? "" : "s"}${res.needsReview ? ` · ${res.needsReview} need review` : ""}${sim}.`,
       );
-      if (res.needsReview > 0) emitAgent("review", `${res.needsReview} contact${res.needsReview === 1 ? "" : "s"} need review`, { simulated: true });
+      if (res.needsReview > 0) emitAgent("review", `${res.needsReview} contact${res.needsReview === 1 ? "" : "s"} need review`, { simulated: true, href: `/dashboard/prospects/${id}` });
       else emitAgent("completed", "Contacts enriched", { simulated: true });
       reload();
     } catch (e) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useApi, apiSend } from "../_components/useApi";
 import { Card, Spinner, ErrorState, EmptyState } from "../_components/primitives";
@@ -42,6 +42,20 @@ export default function ConversationsPage() {
   const { data, loading, error, reload } = useApi<{ conversations: ConversationView[]; needsHuman: number }>("/api/nexai/conversations");
   const [active, setActive] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+
+  // Deep-link: /dashboard/conversations?prospect=<id> pre-selects that thread
+  // (used when the agent character is clicked).
+  useEffect(() => {
+    try {
+      const pid = new URLSearchParams(window.location.search).get("prospect");
+      if (pid && data?.conversations) {
+        const match = data.conversations.find((c) => c.prospectId === pid);
+        if (match) setActive(match.id);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [data]);
 
   if (loading) return <div className="nx-content"><Spinner label="Loading conversations…" /></div>;
   if (error || !data) return <div className="nx-content"><ErrorState message={error ?? "No data"} onRetry={reload} /></div>;
