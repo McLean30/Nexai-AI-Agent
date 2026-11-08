@@ -570,14 +570,83 @@ export const DEFAULT_SETTINGS: Settings = {
   suppressionList: ["lumenstudios.design"],
 };
 
+// ---- Automation sequences (enrolment) ----
+import type { ProspectAutomation, SequenceStep, Notification } from "./types";
+
+function step(id: string, stepType: SequenceStep["stepType"], status: SequenceStep["status"], scheduledFor: string, sentOffset?: number): SequenceStep {
+  const s: SequenceStep = { id, stepType, status, scheduledFor };
+  if (status === "sent" && sentOffset != null) s.sentAt = iso(sentOffset);
+  return s;
+}
+
+const AUTOMATION: Record<string, ProspectAutomation> = {
+  // Active; a follow-up is DUE now → demonstrates the send-guard + queue tick.
+  p_vant_health: {
+    enrolled: true, status: "active", updatedAt: iso(2),
+    steps: [
+      step("sq_vh_1", "initial", "sent", iso(2), 2),
+      step("sq_vh_2", "follow_up_1", "queued", iso(0)),
+      step("sq_vh_3", "follow_up_2", "queued", iso(-3)),
+    ],
+  },
+  // Active; next follow-up scheduled in the future.
+  p_brightloom: {
+    enrolled: true, status: "active", updatedAt: iso(3),
+    steps: [
+      step("sq_bl_1", "initial", "sent", iso(3), 3),
+      step("sq_bl_2", "follow_up_1", "queued", iso(-2)),
+    ],
+  },
+  // Active; initial not yet sent and due now.
+  p_quadrant: {
+    enrolled: true, status: "active", updatedAt: iso(1),
+    steps: [
+      step("sq_qd_1", "initial", "queued", iso(0)),
+      step("sq_qd_2", "follow_up_1", "queued", iso(-3)),
+    ],
+  },
+  // Replied → stopped, handed to Kieran.
+  p_northwind: {
+    enrolled: true, status: "stopped_reply", statusReason: "Inbound reply — handed to Kieran.", updatedAt: iso(1),
+    steps: [
+      step("sq_nw_1", "initial", "sent", iso(8), 8),
+      step("sq_nw_2", "follow_up_1", "stopped", iso(1)),
+    ],
+  },
+  // Replied & booked → completed/stopped.
+  p_orbital: {
+    enrolled: true, status: "stopped_reply", statusReason: "Replied — call booked.", updatedAt: iso(0),
+    steps: [
+      step("sq_or_1", "initial", "sent", iso(9), 9),
+      step("sq_or_2", "follow_up_1", "sent", iso(4), 4),
+    ],
+  },
+  // Bounced → suppressed, stopped.
+  p_castor: {
+    enrolled: true, status: "stopped_bounce", statusReason: "Email bounced — address suppressed.", updatedAt: iso(5),
+    steps: [
+      step("sq_ca_1", "initial", "sent", iso(5), 5),
+      step("sq_ca_2", "follow_up_1", "stopped", iso(-1)),
+    ],
+  },
+};
+
+const seedNotifications: Notification[] = [
+  { id: "ntf_nw", kind: "reply_needs_human", message: "Reply from Northwind Logistics — needs your response.", prospectId: "p_northwind", conversationId: "c_northwind", read: false, createdAt: iso(1, 16) },
+];
+
 export function buildSeedData(): StoreData {
   return {
     version: 1,
-    prospects,
+    prospects: prospects.map((p) => (AUTOMATION[p.id] ? { ...p, automation: AUTOMATION[p.id] } : p)),
     campaigns,
-    conversations,
+    conversations: conversations.map((c) =>
+      c.id === "c_northwind" ? { ...c, needsHuman: true, handling: "kieran", lastInboundAt: iso(1) } : c,
+    ),
     activity,
     settings: { ...DEFAULT_SETTINGS },
     catalogue: { ...DEFAULT_CATALOGUE },
+    notifications: seedNotifications,
+    processedEventIds: [],
   };
 }

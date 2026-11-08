@@ -198,6 +198,7 @@ export interface Prospect {
   decisionMakers: DecisionMaker[];
   research?: ResearchReport;
   draftEmail?: EmailMessage;
+  automation?: ProspectAutomation;
   createdAt: ISODate;
   updatedAt: ISODate;
   lastActivityAt?: ISODate;
@@ -231,6 +232,15 @@ export interface Conversation {
   simulated: boolean;
   messages: EmailMessage[];
   updatedAt: ISODate;
+  // --- Reply handling (new) ---
+  // When a genuine inbound reply arrives, the conversation is handed to Kieran.
+  needsHuman?: boolean;
+  handling?: "agent" | "kieran";
+  // Marks auto-replies (out-of-office) that must be reviewed, not auto-handled.
+  reviewFlag?: "out_of_office";
+  lastInboundAt?: ISODate;
+  // Set true once Kieran marks the reply as personally handled.
+  humanHandledAt?: ISODate;
 }
 
 export interface ActivityEvent {
@@ -263,6 +273,9 @@ export interface StoreData {
   activity: ActivityEvent[];
   settings: Settings;
   catalogue: ServiceCatalogue;
+  notifications: Notification[];
+  // Idempotency: ids of mailbox events already processed.
+  processedEventIds: string[];
 }
 
 export interface OverviewMetrics {
@@ -381,4 +394,66 @@ export interface OfferCheck {
   unsupported: string[]; // excluded services the draft appears to offer
   ambiguous: string[]; // review-item topics mentioned, or catalogue provisional
   matchedOfferings: string[]; // offered services the draft references
+}
+
+// ─────────────────────────────────────────────────────────────
+// Campaign automation & mailbox handling
+// ─────────────────────────────────────────────────────────────
+
+export type SequenceStepStatus = "queued" | "sending" | "sent" | "skipped" | "stopped";
+
+export interface SequenceStep {
+  id: string;
+  stepType: EmailStepType; // initial, follow_up_1, follow_up_2
+  status: SequenceStepStatus;
+  scheduledFor: ISODate;
+  sentAt?: ISODate;
+  emailId?: string; // id of the EmailMessage once sent
+  skipReason?: string;
+}
+
+export type AutomationStatus =
+  | "active"
+  | "stopped_reply"
+  | "stopped_bounce"
+  | "stopped_optout"
+  | "paused_review" // e.g. out-of-office — awaiting Kieran's review
+  | "completed";
+
+export interface ProspectAutomation {
+  enrolled: boolean;
+  status: AutomationStatus;
+  statusReason?: string;
+  updatedAt: ISODate;
+  steps: SequenceStep[];
+}
+
+export type MailboxEventType = "reply" | "bounce" | "opt_out" | "out_of_office" | "auto_reply";
+
+/** A simulated inbound mailbox event (stands in for a Microsoft 365 webhook). */
+export interface MailboxEvent {
+  id: string; // idempotency key
+  type: MailboxEventType;
+  prospectId: string;
+  fromEmail?: string;
+  subject?: string;
+  body?: string;
+  receivedAt: ISODate;
+  simulated: boolean;
+}
+
+export type NotificationKind =
+  | "reply_needs_human"
+  | "out_of_office_review"
+  | "bounce"
+  | "opt_out";
+
+export interface Notification {
+  id: string;
+  kind: NotificationKind;
+  message: string;
+  prospectId?: string;
+  conversationId?: string;
+  read: boolean;
+  createdAt: ISODate;
 }

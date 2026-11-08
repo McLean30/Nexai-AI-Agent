@@ -29,6 +29,8 @@ export async function readStore(): Promise<StoreData> {
   // Backfill defaults if an older store is loaded.
   data.settings = { ...DEFAULT_SETTINGS, ...(data.settings ?? {}) };
   if (!data.catalogue) data.catalogue = { ...DEFAULT_CATALOGUE };
+  if (!Array.isArray(data.notifications)) data.notifications = [];
+  if (!Array.isArray(data.processedEventIds)) data.processedEventIds = [];
   return data;
 }
 

@@ -44,6 +44,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [demoMode, setDemoMode] = useState(true);
   const [liveCount, setLiveCount] = useState(0);
+  const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     setOpen(false);
@@ -60,6 +61,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     fetch("/api/nexai/overview")
       .then((r) => r.json())
       .then((d) => setDemoMode(d.metrics?.demoMode ?? true))
+      .catch(() => {});
+    fetch("/api/nexai/notifications")
+      .then((r) => r.json())
+      .then((d) => setUnread(d.unread ?? 0))
       .catch(() => {});
   }, [pathname]);
 
@@ -99,6 +104,9 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                     {item.label}
                     {item.href === "/dashboard/connections" && (
                       <span className="nx-nav-badge">{liveCount}/5</span>
+                    )}
+                    {item.href === "/dashboard/conversations" && unread > 0 && (
+                      <span className="nx-nav-badge" style={{ background: "rgba(251,191,36,0.25)", color: "#f3cf7a" }}>{unread}</span>
                     )}
                   </Link>
                 ),
