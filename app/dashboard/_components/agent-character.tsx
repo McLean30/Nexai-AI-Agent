@@ -244,51 +244,55 @@ function AgentSvg() {
       </defs>
 
       <g className="nx-body">
-        {/* tail arcing over the top with a glowing stinger */}
+        {/* antenna with a glowing tip */}
         <g className="nx-tail">
-          <path d="M34 34 C 20 24, 22 10, 34 8 C 44 6, 50 12, 48 18"
-            stroke="url(#nxEdge)" strokeWidth="3.4" strokeLinecap="round" opacity="0.85" />
-          <circle className="nx-stinger" cx="48" cy="18" r="3.4" />
+          <line x1="50" y1="29" x2="50" y2="17" stroke="url(#nxEdge)" strokeWidth="2.4" strokeLinecap="round" />
+          <circle className="nx-stinger" cx="50" cy="14" r="3.2" />
         </g>
 
-        {/* claws */}
-        <path d="M28 70 C 20 72, 18 80, 24 84" stroke="url(#nxEdge)" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
-        <path d="M72 70 C 80 72, 82 80, 76 84" stroke="url(#nxEdge)" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
+        {/* shoulders / body base */}
+        <path d="M33 74 L29 88 L71 88 L67 74 Z" fill="url(#nxShell)" stroke="url(#nxEdge)" strokeWidth="2" strokeLinejoin="round" />
+        <circle cx="42" cy="84" r="1.4" fill="#38bdf8" opacity="0.8" />
+        <circle cx="58" cy="84" r="1.4" fill="#38bdf8" opacity="0.8" />
 
-        {/* head shield */}
-        <path d="M50 34 L72 44 L70 68 L50 80 L30 68 L28 44 Z"
-          fill="url(#nxShell)" stroke="url(#nxEdge)" strokeWidth="2.2" />
-        {/* circuit lines */}
-        <path d="M50 80 L50 60 M50 60 L41 54 M50 60 L59 54 M41 54 L41 48 M59 54 L59 48"
-          stroke="#2b5fb0" strokeWidth="1.4" strokeLinecap="round" opacity="0.8" />
-        <circle cx="50" cy="60" r="1.6" fill="#38bdf8" />
+        {/* side ear pods */}
+        <rect x="20" y="46" width="6" height="14" rx="3" fill="url(#nxShell)" stroke="url(#nxEdge)" strokeWidth="1.8" />
+        <rect x="74" y="46" width="6" height="14" rx="3" fill="url(#nxShell)" stroke="url(#nxEdge)" strokeWidth="1.8" />
+
+        {/* head */}
+        <rect x="27" y="29" width="46" height="46" rx="13" fill="url(#nxShell)" stroke="url(#nxEdge)" strokeWidth="2.2" />
+        {/* forehead sensor */}
+        <circle cx="50" cy="36" r="1.6" fill="#38bdf8" />
+
+        {/* face screen */}
+        <rect x="31" y="41" width="38" height="25" rx="8" fill="#071020" stroke="rgba(56,189,248,0.3)" strokeWidth="1.2" />
 
         {/* eyes */}
         <g className="nx-eyes">
-          <ellipse className="nx-eye-glow" cx="41" cy="49" rx="5.4" ry="4" />
-          <ellipse className="nx-eye-glow" cx="59" cy="49" rx="5.4" ry="4" />
+          <ellipse className="nx-eye-glow" cx="41" cy="51" rx="5.2" ry="4.6" />
+          <ellipse className="nx-eye-glow" cx="59" cy="51" rx="5.2" ry="4.6" />
           <g className="nx-pupils">
-            <circle className="nx-pupil" cx="41" cy="49" r="1.9" />
-            <circle className="nx-pupil" cx="59" cy="49" r="1.9" />
+            <circle className="nx-pupil" cx="41" cy="51" r="1.9" />
+            <circle className="nx-pupil" cx="59" cy="51" r="1.9" />
           </g>
         </g>
-        {/* visor line */}
-        <path className="nx-visor" d="M36 66 L64 66" strokeWidth="1.6" strokeLinecap="round" opacity="0.5" />
+        {/* friendly mouth */}
+        <path className="nx-visor" d="M44 61 Q50 64 56 61" strokeWidth="1.6" strokeLinecap="round" fill="none" opacity="0.8" />
 
         {/* success sparkles */}
         <g className="nx-spark">
-          <path d="M74 36 l1.6 3.2 3.2 1.6 -3.2 1.6 -1.6 3.2 -1.6 -3.2 -3.2 -1.6 3.2 -1.6 Z" fill="#34d399" />
-          <circle cx="26" cy="40" r="2" fill="#34d399" />
+          <path d="M76 34 l1.6 3.2 3.2 1.6 -3.2 1.6 -1.6 3.2 -1.6 -3.2 -3.2 -1.6 3.2 -1.6 Z" fill="#34d399" />
+          <circle cx="24" cy="38" r="2" fill="#34d399" />
         </g>
 
         {/* reply mail icon */}
-        <g className="nx-mail" transform="translate(66 24)">
+        <g className="nx-mail" transform="translate(68 22)">
           <rect x="-9" y="-6" width="18" height="13" rx="2.5" fill="#0a1324" stroke="#38bdf8" strokeWidth="1.6" />
           <path d="M-9 -4 L0 2 L9 -4" stroke="#38bdf8" strokeWidth="1.6" fill="none" />
         </g>
 
         {/* attention badge */}
-        <g className="nx-badge-mark" transform="translate(70 32)">
+        <g className="nx-badge-mark" transform="translate(71 31)">
           <circle r="8" fill="#f87171" />
           <rect x="-1" y="-4.4" width="2" height="5.4" rx="1" fill="#1a0b0b" />
           <circle cx="0" cy="3.2" r="1.2" fill="#1a0b0b" />
